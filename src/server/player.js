@@ -2,8 +2,8 @@ const crypto = require('crypto');
 const Piece = require('./piece.js');
 
 class Player {
-  constructor() {
-    this.id = `player#${crypto.randomBytes(8).toString('hex')}`;
+  constructor(socketId) {
+    this.id = socketId;
     this.piece = new Piece();
     this.field = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

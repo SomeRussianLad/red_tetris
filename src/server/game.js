@@ -1,26 +1,26 @@
-const crypto = require('crypto');
+// const crypto = require('crypto');
 const Player = require('./player');
 
 class Game {
-  constructor(eventEmitter) {
-    this.id = `game#${crypto.randomBytes(8).toString('hex')}`;
+  constructor(gameId) {
+    this.id = gameId;
     this.players = {};
-    this.eventLoop = null;
-    this.eventEmitter = eventEmitter;
+    // this.eventLoop = null;
+    // this.eventEmitter = null;
   }
 
-  startGame() {
-    this.eventLoop = setInterval(() => this.nextTick(), 1000);
-  }
+  // startGame() {
+  //   this.eventLoop = setInterval(() => this.nextTick(), 1000);
+  // }
 
-  pauseGame() {
-    this.eventLoop = null;
-  }
+  // pauseGame() {
+  //   this.eventLoop = null;
+  // }
 
-  nextTick() {
-    Object.values(this.players).forEach((player) => { player.moveDown() });
-    this.updateState();
-  }
+  // nextTick() {
+  //   Object.values(this.players).forEach((player) => { player.moveDown(); });
+  //   this.updateState();
+  // }
 
   updateState() {
     const fields = {};
@@ -29,17 +29,21 @@ class Game {
       fields[player.id] = player.field;
     });
 
-    this.eventEmitter.emit('update state', {
+    return {
       id: this.id,
       fields,
-    });
+    };
   }
 
-  createPlayer() {
-    const player = new Player();
+  createPlayer(socketId) {
+    const player = new Player(socketId);
 
     this.players[player.id] = player;
     return player.id;
+  }
+
+  removePlayer(socketId) {
+    this.players;
   }
 
   action(action, id) {
@@ -54,7 +58,7 @@ class Game {
       drop: this.players[id].drop,
       rotate: this.players[id].rotate,
     };
-    moveSet[action]();
+    return moveSet[action]();
   }
 }
 

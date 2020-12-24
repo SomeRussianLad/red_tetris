@@ -14,13 +14,13 @@ class Piece {
       4: generateStep,
       5: generateReversedStep,
       6: generateTable,
-    }
+    };
 
     return shapeGenerators[Math.floor(Math.random() * shapeIterators.length)]();
   }
 
   rotate() {
-    
+
   }
 
   // generateShape() {
