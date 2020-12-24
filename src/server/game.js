@@ -1,55 +1,60 @@
-class Game {
-  constructor(io, id, playerLimit = 1) {
-    this.io = io;
-    this.id = id;
-    this.playerLimit = playerLimit;
-    this.players = [];
+const crypto = require('crypto');
+const Player = require('./player');
 
-    this.isActive = true; // Статус игры
-    this.timeoutBeforeTermination = setTimeout(() => {
-      this.timeoutBeforeTermination = null;
-    }, 1000 * 60); // минутный таймаут, который держит сессию открытой, даже если нет игроков
+class Game {
+  constructor(eventEmitter) {
+    this.id = `game#${crypto.randomBytes(8).toString('hex')}`;
+    this.players = {};
+    this.eventLoop = null;
+    this.eventEmitter = eventEmitter;
+  }
+
+  startGame() {
+    this.eventLoop = setInterval(() => this.nextTick(), 1000);
+  }
+
+  pauseGame() {
+    this.eventLoop = null;
   }
 
   nextTick() {
-    // Здесь нужно прописать кучу условий, при которых игру нужно закрывать
-    // Не закончено!
-    // if (!this.isActive && !this.timeoutBeforeTermination && !this.players.length) {
-    //   this.endSession();
-    //   return;
-    // }
-
-    this.players.forEach((player) => {
-      if (player.isActive) {
-        // player.movePieceDown();
-      }
-    });
-
-    const currentState = {};
-    this.players.forEach((player) => { currentState[player.socket.id] = player.field; });
-
-    this.io.volatile.in(this.id).emit('current state', currentState);
+    Object.values(this.players).forEach((player) => { player.moveDown() });
+    this.updateState();
   }
 
-  addPlayer(player) {
-    if (this.players.length === this.playerLimit) {
-      return false;
+  updateState() {
+    const fields = {};
+
+    Object.values(this.players).forEach((player) => {
+      fields[player.id] = player.field;
+    });
+
+    this.eventEmitter.emit('update state', {
+      id: this.id,
+      fields,
+    });
+  }
+
+  createPlayer() {
+    const player = new Player();
+
+    this.players[player.id] = player;
+    return player.id;
+  }
+
+  action(action, id) {
+    if (!this.players[id]) {
+      return;
     }
-    player.socket.join(this.id);
-    this.players.push(player);
-    return true;
-  }
 
-  endSession() {
-    this.players.forEach((player) => {
-      player.to(this.id).emit('session closed', {
-        id: this.id,
-        message: 'Game session closed',
-        status: 200,
-      });
-      player.socket.leave(this.id);
-    });
-    this.isActive = false;
+    const moveSet = {
+      moveLeft: this.players[id].moveLeft,
+      moveRight: this.players[id].moveRight,
+      moveDown: this.players[id].moveDown,
+      drop: this.players[id].drop,
+      rotate: this.players[id].rotate,
+    };
+    moveSet[action]();
   }
 }
 
