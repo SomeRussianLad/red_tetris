@@ -12,7 +12,6 @@
     "lint": "eslint --fix --ext .js ."
   },
   "dependencies": {
-    "crypto": "*",
     "dotenv": "*",
     "express": "*",
     "http": "0.0.1-security",
