@@ -6,17 +6,18 @@ class Piece {
   }
 
   getShape() {
-    const shapeGenerators = {
-      0: generatePlank,
-      1: generateHook,
-      2: generateReversedHook,
-      3: generateSquare,
-      4: generateStep,
-      5: generateReversedStep,
-      6: generateTable,
-    };
+    // const shapeGenerators = {
+    //   0: generatePlank,
+    //   1: generateHook,
+    //   2: generateReversedHook,
+    //   3: generateSquare,
+    //   4: generateStep,
+    //   5: generateReversedStep,
+    //   6: generateTable,
+    // };
 
-    return shapeGenerators[Math.floor(Math.random() * shapeIterators.length)]();
+    // return shapeGenerators[Math.floor(Math.random() * shapeIterators.length)]();
+    return [];
   }
 
   rotate() {

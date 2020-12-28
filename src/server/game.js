@@ -1,17 +1,16 @@
-// const crypto = require('crypto');
 const Player = require('./player');
 
 class Game {
-  constructor(gameId) {
-    this.id = gameId;
+  constructor(id) {
+    this.id = id;
     this.players = {};
-    // this.eventLoop = null;
-    // this.eventEmitter = null;
+    this.playerLimit = 8;
+    this.isActive = false;
   }
 
-  // startGame() {
-  //   this.eventLoop = setInterval(() => this.nextTick(), 1000);
-  // }
+  startGame() {
+    this.isActive = true;
+  }
 
   // pauseGame() {
   //   this.eventLoop = null;
@@ -35,14 +34,14 @@ class Game {
     };
   }
 
-  createPlayer(socketId) {
-    const player = new Player(socketId);
+  createPlayer(id) {
+    const player = new Player(id);
 
     this.players[player.id] = player;
     return player.id;
   }
 
-  removePlayer(socketId) {
+  removePlayer(id) {
     this.players;
   }
 
