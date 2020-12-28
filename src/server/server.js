@@ -1,4 +1,4 @@
-socketrequire('dotenv').config();
+require('dotenv').config();
 
 const http = require('http');
 const express = require('express');
@@ -18,36 +18,26 @@ class Server {
   }
 
   createHttp() {
-    // Взял и красоту закомментил, пёс обсос
-    // this.app.get('/', (req, res) => {
-    //   res.send(`
-    //     <p style="text-align: center;
-    //       font-family: 'Comic Sans MS', serif;
-    //       font-size: 4em;
-    //       background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
-    //       -webkit-background-clip: text;
-    //       color: transparent" >
-    //         Who are you? I didn't call you. Go fuck yourself!<br/>
-    //         <img
-    //           src="https://memepedia.ru/wp-content/uploads/2018/01/%D0%B2%D1%8B-%D0%BA%D1%82%D0%BE-%D1%82%D0%B0%D0%BA%D0%B8%D0%B5-%D1%8F-%D0%B2%D0%B0%D1%81-%D0%BD%D0%B5-%D0%B7%D0%B2%D0%B0%D0%BB-1.png">
-    //     </p>
-    //   `);
-    // });
     return this;
   }
 
   createSocketRoutes() {
     this.io.on('connection', (socket) => {
       socket.on('disconnect', () => {
-        socket.rooms.forEach((roomName) => {
-          if (this.games[roomName]) {
-            const game = this.game[roomName];
-            if (roomName === socket.id && !this.games[roomName].isStarted()) {
-              delete this.games[roomName];
-            }
+        Object.values(socket.rooms).forEach((room) => {
+          const game = this.game[room];
+
+          if (game) {
+            const hostRoom = `game-${socket.id}`;
+
             game.removePlayer(socket.id);
+
+            if (room === hostRoom && !game.isActive) {
+              delete this.games[room];
+            }
+
             if (Object.values(game.players).length === 0) {
-              delete this.games[roomName];
+              delete this.games[room];
             }
           }
         });
@@ -60,77 +50,115 @@ class Server {
       });
 
       socket.on('new-game', () => {
-        const gameId = `game-${socket.id}`;
+        const id = `game-${socket.id}`;
 
-        if (this.games[gameId]) {
+        if (this.games[id]) {
           socket.emit('new-game', {
-            id: gameId,
+            id,
             message: 'Previous session not closed',
             status: 400,
           });
           return;
         }
 
-        const game = new Game(gameId);
+        const game = new Game(id);
 
-        this.games[gameId] = game;
-        game.createPlayer(socket.id);
-        socket.join(gameId);
-      });
+        this.games[id] = game;
+        game.createPlayer(id);
 
-      socket.on('join-game', (message) => {
-        const { gameId } = message;
-        const game = this.games[gameId];
-
-        if (!game || games.isFull()) {
-          socket.emit('join-game', {
-            id: gameId,
-            message: '...',
-            status: 400,
-          });
-        }
-
-        game.createPlayer(socket.id);
-        socket.join(gameId);
-
-        socket.emit('join-game', {
+        socket.join(id);
+        socket.emit('new-game', {
           id,
-          message: 'Joined game session successfully',
+          message: 'Game created successfully',
           status: 200,
         });
       });
 
-      socket.on('start-game', () => {
-        const gameId = `game-${socket.id}`;
+      socket.on('join-game', (message) => {
+        const { id } = message;
+        const game = this.games[id];
 
-        if (!this.games[gameId]) {
-          socket.emit('start-game', {
-            id: gameId,
+        if (!game) {
+          socket.emit('join-game', {
+            id,
             message: 'No such game',
             status: 400,
           });
           return;
         }
 
-        this.io.broadcast.to(gameId).emit('start-game', {
-          // id: `room`,
-          message: 'We\'re in boooooooiiiiiiiiiiiiiiis',
+        if (socket.rooms[id]) {
+          socket.emit('join-game', {
+            id,
+            message: 'Already joined',
+            status: 400,
+          });
+          return;
+        }
+
+        if (Object.values(game.players).length === game.playerLimit) {
+          socket.emit('join-game', {
+            id,
+            message: 'Room full',
+            status: 400,
+          });
+          return;
+        }
+
+        const playerId = `player-${socket.id}`;
+
+        game.createPlayer(playerId);
+        socket.join(id);
+
+        this.io.to(id).emit('join game', {
+          id,
+          playerId,
+          message: 'Joined game session successfully',
+          status: 200,
+        });
+      });
+
+      socket.on('start-game', () => {
+        const id = `game-${socket.id}`;
+        const game = this.games[id];
+
+        if (!game) {
+          socket.emit('start-game', {
+            id,
+            message: 'No such game',
+            status: 400,
+          });
+          return;
+        }
+
+        if (game.isActive) {
+          socket.emit('start-game', {
+            id,
+            message: 'Already started',
+            status: 400,
+          });
+          return;
+        }
+
+        game.startGame();
+
+        this.io.to(id).emit('start-game', {
+          id,
+          message: 'Game started',
           status: 200,
         });
 
         setInterval(() => {
-          const data = this.games[gameId].updateState();
-          this.io.broadcast.to(gameId).emit('new-state', data);
+          const data = this.games[id].updateState();
+          this.io.broadcast.to(id).emit('new-state', data);
         }, 500);
       });
 
-      socket.on('action', (messsage) => {
+      socket.on('player-action', (message) => {
         /**
-         * TODO: завтра накидаю
          * Концептуально тут будет приём из даты action и сувание его игроку
          * this.games[`game-${data.id}][socket.id].action('rotate');
-         * Достатошно изящна
-         * 
+         *
          * {
          *    id: <id>
          *    action: 'up' | 'down' | 'left' | 'right' | 'drop' | 'rotate',
@@ -138,9 +166,29 @@ class Server {
          */
         const { id, action } = message;
         const game = this.games[id];
+        const playerId = `player-${socket.id}`;
+
+        if (!game) {
+          socket.emit('player-action', {
+            id,
+            message: 'No such game',
+            status: 400,
+          });
+          return;
+        }
+
+        if (!socket.rooms[id]) {
+          socket.emit('player-action', {
+            id,
+            message: 'No permission to access this game ssession',
+            status: 400,
+          });
+          return;
+        }
+
         const data = game.action(action, id);
 
-        socket.emit('action', data);
+        socket.emit('player-action', data);
       });
     });
     return this;
