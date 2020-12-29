@@ -3,7 +3,6 @@ const Piece = require('./piece.js');
 class Player {
   constructor(id) {
     this.id = id;
-    this.piece = new Piece();
     this.field = [
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -26,6 +25,11 @@ class Player {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
+  }
+
+  goDown() {
+    let field = this.field.slice();
+
   }
 }
 
