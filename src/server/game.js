@@ -45,11 +45,7 @@ class Game {
     this.players;
   }
 
-  action(action, id) {
-    if (!this.players[id]) {
-      return;
-    }
-
+  playerAction(action, id) {
     const moveSet = {
       moveLeft: this.players[id].moveLeft,
       moveRight: this.players[id].moveRight,
@@ -57,6 +53,7 @@ class Game {
       drop: this.players[id].drop,
       rotate: this.players[id].rotate,
     };
+
     return moveSet[action]();
   }
 }

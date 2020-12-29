@@ -125,7 +125,7 @@ class Server {
         if (!game) {
           socket.emit('start-game', {
             id,
-            message: 'No such game',
+            message: 'No opened sessions to start',
             status: 400,
           });
           return;
@@ -149,7 +149,7 @@ class Server {
         });
 
         setInterval(() => {
-          const data = this.games[id].updateState();
+          const data = game.updateState();
           this.io.broadcast.to(id).emit('new-state', data);
         }, 500);
       });
@@ -180,15 +180,20 @@ class Server {
         if (!socket.rooms[id]) {
           socket.emit('player-action', {
             id,
-            message: 'No permission to access this game ssession',
+            message: 'No permission to access this game session',
             status: 400,
           });
           return;
         }
 
-        const data = game.action(action, id);
+        const data = game.playerAction(action, playerId);
 
-        socket.emit('player-action', data);
+        if (data.status === 200) {
+          this.io.to(id).emit('player-action', data);
+        }
+        else {
+          socket.emit('player-action', data);
+        }
       });
     });
     return this;
