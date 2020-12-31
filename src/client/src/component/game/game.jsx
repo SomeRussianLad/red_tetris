@@ -44,7 +44,7 @@ const Game = () => {
   const [gamesList, setGamesList] = useState({});
 
   useEffect(() => {
-    const socket = io.connect('http://localhost:5000');
+    const socket = io('http://0.0.0.0:5000');
     socket.on('list-game', (msg) => {
       setGamesList(msg)
     });
