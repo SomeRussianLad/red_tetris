@@ -22,6 +22,7 @@ class Server {
   }
 
   createHttp() {
+    this.app.get('/', (req, res) => { res.send('a'); });
     return this;
   }
 
