@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const http = require('http');
 const express = require('express');
-const SocketIO = require('socket.io');
+const io = require('socket.io');
 const Game = require('./game');
 
 class Server {
@@ -12,7 +12,11 @@ class Server {
 
     this.app = express();
     this.http = http.createServer(this.app);
-    this.io = new SocketIO(this.http);
+    this.io = io(this.http, {
+      cors: {
+        origin: '*',
+      },
+    });
 
     this.games = {};
   }
@@ -43,8 +47,8 @@ class Server {
         });
       });
 
-      socket.on('list-game', () => {
-        socket.emit('list-game', {
+      socket.on('list-games', () => {
+        socket.emit('list-games', {
           data: Object.values(this.games).map((game) => game.id),
         });
       });
@@ -110,7 +114,7 @@ class Server {
         game.createPlayer(playerId);
         socket.join(id);
 
-        this.io.to(id).emit('join game', {
+        this.io.in(id).emit('join-game', {
           id,
           playerId,
           message: 'Joined game session successfully',
@@ -142,15 +146,26 @@ class Server {
 
         game.startGame();
 
-        this.io.to(id).emit('start-game', {
+        this.io.in(id).emit('start-game', {
           id,
           message: 'Game started',
           status: 200,
         });
 
-        setInterval(() => {
+        const interval = setInterval(() => {
           const data = game.updateState();
-          this.io.broadcast.to(id).emit('new-state', data);
+
+          if (data.gameStatus === 'terminated') {
+            this.io.in(id).emit('new-state', {
+              id,
+              message: 'Game session terminated',
+              status: 0,
+            });
+            socket.leave(id);
+            clearInterval(interval);
+          }
+
+          this.io.in(id).emit('new-state', data);
         }, 500);
       });
 
@@ -189,10 +204,13 @@ class Server {
         const data = game.playerAction(action, playerId);
 
         if (data.status === 200) {
-          this.io.to(id).emit('player-action', data);
-        }
-        else {
-          socket.emit('player-action', data);
+          this.io.in(id).emit('new-state', data);
+        } else {
+          socket.emit('new-state', {
+            id,
+            message: 'Action not permitted',
+            status: 400,
+          });
         }
       });
     });

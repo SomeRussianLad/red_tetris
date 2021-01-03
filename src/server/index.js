@@ -1,3 +1,6 @@
 const Server = require('./server');
 
-new Server().createHttp().createSocketRoutes().listen();
+new Server()
+  .createHttp()
+  .createSocketRoutes()
+  .listen();
