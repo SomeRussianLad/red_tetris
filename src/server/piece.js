@@ -2,15 +2,16 @@ class Piece {
   constructor(shape) {
     this.shape = shape;
     this.currentView = 0;
-    this.x = 0;
+    this.x = 4;
     this.y = 0;
   }
 
-  rotate() {
-    if (this.currentView < this.shape.length) {
+  rotateFigure() {
+    if (this.shape[this.currentView + 1]) {
       this.currentView += 1;
+    } else {
+      this.currentView = 0;
     }
-    this.currentView = 0;
   }
 
   currentFigure() {

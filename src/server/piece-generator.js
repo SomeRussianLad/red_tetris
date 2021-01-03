@@ -1,3 +1,5 @@
+const Piece = require('./piece');
+
 class PieceGenerator {
   constructor() {
     this.templates = {
@@ -174,7 +176,7 @@ class PieceGenerator {
   generatePiece() {
     const keys = Object.keys(this.templates);
     const randomKey = Math.floor(Math.random() * keys.length);
-    return this.templates[keys[randomKey]];
+    return new Piece(this.templates[keys[randomKey]]);
   }
 }
 
