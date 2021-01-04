@@ -27,9 +27,11 @@ class Server {
 
   createSocketRoutes() {
     this.io.on('connection', (socket) => {
+      console.log('conn');
       socket.on('disconnect', () => {
         Object.values(socket.rooms).forEach((room) => {
           const game = this.game[room];
+          console.log('disc');
 
           if (game) {
             const hostRoom = `game-${socket.id}`;
@@ -54,6 +56,7 @@ class Server {
       });
 
       socket.on('new-game', () => {
+        console.log('new');
         const id = `game-${socket.id}`;
 
         if (this.games[id]) {
