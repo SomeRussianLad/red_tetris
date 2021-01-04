@@ -13,7 +13,6 @@ beforeAll((done) => {
 });
 
 afterAll((done) => {
-  server.close();
   done();
 });
 
