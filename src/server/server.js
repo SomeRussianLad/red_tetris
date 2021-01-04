@@ -29,7 +29,7 @@ class Server {
     this.io.on('connection', (socket) => {
       socket.on('disconnect', () => {
         Object.values(socket.rooms).forEach((room) => {
-          const game = this.game[room];
+          const game = this.games[room];
 
           if (game) {
             const hostRoom = `game-${socket.id}`;
@@ -68,7 +68,7 @@ class Server {
         const game = new Game(id);
 
         this.games[id] = game;
-        game.createPlayer(id);
+        game.createPlayer(socket.id);
 
         socket.join(id);
         socket.emit('new-game', {
@@ -111,7 +111,7 @@ class Server {
 
         const playerId = `player-${socket.id}`;
 
-        game.createPlayer(playerId);
+        game.createPlayer(socket.id);
         socket.join(id);
 
         this.io.in(id).emit('join-game', {
@@ -148,14 +148,14 @@ class Server {
 
         this.io.in(id).emit('start-game', {
           id,
-          message: 'Game started',
+          message: 'Game session started successfully',
           status: 200,
         });
 
         const interval = setInterval(() => {
           const data = game.updateState();
 
-          if (data.gameStatus === 'terminated') {
+          if (!data) {
             this.io.in(id).emit('new-state', {
               id,
               message: 'Game session terminated',
@@ -163,10 +163,11 @@ class Server {
             });
             socket.leave(id);
             clearInterval(interval);
+            return;
           }
 
           this.io.in(id).emit('new-state', data);
-        }, 500);
+        }, 1000);
       });
 
       socket.on('player-action', (message) => {
@@ -200,28 +201,20 @@ class Server {
           });
           return;
         }
-
-        const data = game.playerAction(action, playerId);
-
-        if (data.status === 200) {
-          this.io.in(id).emit('new-state', data);
-        } else {
-          socket.emit('new-state', {
-            id,
-            message: 'Action not permitted',
-            status: 400,
-          });
-        }
+        this.io.in(id).emit('new-state', game.playerAction(action, playerId));
       });
     });
     return this;
   }
 
   listen() {
-    this.http.listen(this.port, this.host, () => {
+    return this.http.listen(this.port, this.host, () => {
       process.stdout.write(`Listening on http://${this.host}:${this.port}\n`);
     });
-    return this;
+  }
+
+  close() {
+    return this.http.close();
   }
 }
 

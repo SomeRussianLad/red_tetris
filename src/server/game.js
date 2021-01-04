@@ -12,17 +12,48 @@ class Game {
     this.isActive = true;
   }
 
-  // pauseGame() {
-  //   this.eventLoop = null;
-  // }
-
-  // nextTick() {
-  //   Object.values(this.players).forEach((player) => { player.moveDown(); });
-  //   this.updateState();
-  // }
+  pauseGame() {
+    this.isActive = false;
+  }
 
   updateState() {
-    const fields = {};
+    const states;
+
+    if(Object.values(this.players).every((player) => !player.isAlive)) {
+      return false;
+    }
+
+    Object.values(this.players).forEach((player) => {
+      player.updateState();
+      states[player.id] = {
+        field: player.field,
+        isAlive: player.isAlive,
+      }
+    });
+
+    return {
+      id: this.id,
+      states,
+    };
+  }
+
+  createPlayer(id) {
+    const playerId = `player-${id}`;
+    const player = new Player(playerId);
+
+    this.players[player.id] = player;
+  }
+
+  removePlayer(id) {
+    const playerId = `player-${id}`;
+
+    if (this.players[playerId]) {
+      delete this.players[playerId];
+    }
+  }
+
+  playerAction(action, id) {
+    this.players[id].action(action);
 
     Object.values(this.players).forEach((player) => {
       fields[player.id] = player.field;
@@ -32,29 +63,6 @@ class Game {
       id: this.id,
       fields,
     };
-  }
-
-  createPlayer(id) {
-    const player = new Player(id);
-
-    this.players[player.id] = player;
-    return player.id;
-  }
-
-  removePlayer(id) {
-    this.players;
-  }
-
-  playerAction(action, id) {
-    const moveSet = {
-      moveLeft: this.players[id].moveLeft,
-      moveRight: this.players[id].moveRight,
-      moveDown: this.players[id].moveDown,
-      drop: this.players[id].drop,
-      rotate: this.players[id].rotate,
-    };
-
-    return moveSet[action]();
   }
 }
 
