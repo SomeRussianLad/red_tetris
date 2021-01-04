@@ -8,35 +8,34 @@ jest.mock('../piece-generator');
 const mockGeneratePiece = jest.fn();
 PieceGenerator.prototype.generatePiece = mockGeneratePiece;
 
-mockGeneratePiece.mockReturnValue(new Piece({
-  0:
-    [
-      [1, 0, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-    ],
-  1:
-    [
-      [0, 1, 1],
-      [0, 1, 0],
-      [0, 1, 0],
-    ],
-  2:
-    [
-      [0, 0, 0],
-      [1, 1, 1],
-      [0, 0, 1],
-    ],
-  3:
-    [
-      [0, 1, 0],
-      [0, 1, 0],
-      [1, 1, 0],
-    ],
-}));
-
 beforeEach((done) => {
   player = new Player(1);
+  mockGeneratePiece.mockReturnValue(new Piece({
+    0:
+      [
+        [1, 0, 0],
+        [1, 1, 1],
+        [0, 0, 0],
+      ],
+    1:
+      [
+        [0, 1, 1],
+        [0, 1, 0],
+        [0, 1, 0],
+      ],
+    2:
+      [
+        [0, 0, 0],
+        [1, 1, 1],
+        [0, 0, 1],
+      ],
+    3:
+      [
+        [0, 1, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+      ],
+  }));
   done();
 });
 
@@ -112,8 +111,8 @@ describe('moving', () => {
     player.action('right');
     player.action('right');
     expect(player.field).toEqual([
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
