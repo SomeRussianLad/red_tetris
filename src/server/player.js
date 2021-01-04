@@ -26,12 +26,13 @@ class Player {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 3, 3, 3, 0, 0],
-      [0, 0, 0, 0, 0, 3, 3, 3, 0, 0],
-      [0, 0, 0, 0, 0, 3, 3, 3, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
     this.tempField = undefined;
     this.piece = undefined;
+    this.isAlive = true;
   }
 
   fixedFigure() {
@@ -44,17 +45,29 @@ class Player {
         }
       }
     }
+    this.piece = undefined;
     return this;
   }
 
   spawnFigure() {
     this.piece = new PieceGenerator().generatePiece();
     const figure = this.piece.currentFigure();
+    const X = this.piece.x;
+    const Y = this.piece.y;
     for (let y = 0; y < figure.length; y += 1) {
-      for (let x = 0; x < figure[y].length; x += 1) {
-        this.field[y][x + 4] = figure[y][x];
+      for (let x = 0; x < figure[0].length; x += 1) {
+        if (x >= 0 && x < this.field[0].length
+          && y >= 0 && y < this.field.length) {
+          this.field[Y + y][X + x] = figure[y][x];
+          if (this.field[Y + y][X + x] !== 0 && this.field[Y + y][X + x] % 2 === 0) {
+            return undefined;
+          }
+        } else {
+          return undefined;
+        }
       }
     }
+    return this;
   }
 
   clearField() {
@@ -109,6 +122,10 @@ class Player {
   }
 
   action(action = 'left') {
+    if (this.isAlive === false) {
+      return false;
+    }
+
     this.tempField = this.field.map((row) => row.slice());
     let result;
 
@@ -141,21 +158,20 @@ class Player {
     }
     if (result !== undefined) {
       this.field = this.tempField;
+      return true;
     }
-    return this;
+    return false;
   }
 
   updateState() {
     if (this.piece) {
       this.action('down');
-    } else {
-      this.spawnFigure();
+    } else if (!this.spawnFigure()) {
+      this.isAlive = false;
+      return false;
     }
-    return this;
+    return true;
   }
 }
 
-new Player(1).updateState().updateState().updateState()
-  .action()
-  .action()
-  .action('rotate');
+module.exports = Player;

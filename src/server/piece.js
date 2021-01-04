@@ -2,7 +2,7 @@ class Piece {
   constructor(shape) {
     this.shape = shape;
     this.currentView = 0;
-    this.x = 4;
+    this.x = 3;
     this.y = 0;
   }
 
