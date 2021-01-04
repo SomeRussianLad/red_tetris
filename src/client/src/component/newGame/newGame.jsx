@@ -1,22 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import socketIOClient from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { NavLink } from 'react-router-dom';
+import { connect } from 'react-redux';
 import styles from './newGame.module.scss';
 import Copy from '../../common/copy.png';
+import { setNewGame } from '../../middleware/storeStateMiddleWare';
 
-const NewGame = () => {
+// eslint-disable-next-line react/prop-types
+const NewGame = ({ dispatchNewGame, game }) => {
   const [response, setResponse] = useState('');
   const [link, setLink] = useState('');
 
   useEffect(() => {
     if (!response) {
-      const socket = socketIOClient();
-      socket.on('new-game', (res) => {
-        setResponse(`http://127.0.0.1:5000/game/${res.id}`);
-        setLink(`game/${res.id}`);
-      });
-      socket.emit('new-game');
+      dispatchNewGame();
+      setResponse(`http://127.0.0.1:5000/game/${game}`);
+      setLink(`game/${game}`);
     }
   }, [response]);
 
@@ -32,5 +31,12 @@ const NewGame = () => {
     </div>
   );
 };
+const mapDispatchToProps = {
+  dispatchNewGame: setNewGame,
+};
 
-export default NewGame;
+const mapStateToProps = (state) => ({
+  game: state.game.game,
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(NewGame);
