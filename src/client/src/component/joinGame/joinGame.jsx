@@ -6,7 +6,9 @@ const JoinGame = () => {
   useEffect(() => { /**/ }, []);
 
   return (
-    <div className={styles.container} />
+    <div className={styles.container}>
+      <h1>Render</h1>
+    </div>
   );
 };
 
