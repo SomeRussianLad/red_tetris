@@ -1,6 +1,8 @@
 import socketIOClient from 'socket.io-client';
 import handleErrors from '../utils/handleErrors';
-import { setGame, setList, setMap } from '../store/actions/actionGame';
+import {
+  setGame, setList, setMap, setPlayer,
+} from '../store/actions/actionGame';
 
 const socket = socketIOClient();
 
@@ -23,6 +25,10 @@ export const setListGame = () => (dispatch) => {
 // eslint-disable-next-line no-unused-vars
 export const joinGame = (id) => (dispatch) => {
   socket.on('join-game', (res) => {
+    if (res.status === 200) {
+      const user = res.playerId.split('-');
+      setPlayer(user[1]);
+    }
     console.log(res);
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // message: "Joined game session successfully"

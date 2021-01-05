@@ -25,7 +25,7 @@ const NewGame = ({ dispatchNewGame, game }) => {
   return (
     <div className={styles.container}>
       <div>
-        <input className={styles.input} value={response} />
+        <p className={styles.input}>{response}</p>
         <CopyToClipboard text={response}>
           <img className={styles.copy} src={Copy} alt="copy" />
         </CopyToClipboard>
