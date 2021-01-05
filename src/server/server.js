@@ -27,8 +27,8 @@ class Server {
 
   createSocketRoutes() {
     this.io.on('connection', (socket) => {
-      socket.on('disconnect', () => {
-        Object.values(socket.rooms).forEach((room) => {
+      socket.on('disconnecting', () => {
+        socket.rooms.forEach((room) => {
           const game = this.games[room];
 
           if (game) {
@@ -38,23 +38,26 @@ class Server {
 
             // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
-              this.io.sockets.clients(room).forEach((s) => {
-                s.leave(room);
+              this.io.of('/').in(room).sockets.forEach((value, key, map) => {
+                value.leave(room);
               });
               delete this.games[room];
+              console.log(this.games);
               return;
             }
 
             // Если все игроки неактивны/проиграли, удалить игру
-            if (Object.values(game.players).every((player) => !player.isAlive)) {
-              this.io.sockets.clients(room).forEach((s) => {
-                s.leave(room);
-              });
-              delete this.games[room];
-            }
+            // if (Object.values(game.players).every((player) => !player.isAlive)) {
+            //   this.io.sockets.clients(room).forEach((s) => {
+            //     s.leave(room);
+            //   });
+            //   delete this.games[room];
+            // }
           }
         });
       });
+
+      socket.on('dosconnect', () => {});
 
       socket.on('list-games', () => {
         socket.emit('list-games', {
