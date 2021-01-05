@@ -37,12 +37,13 @@ class Player {
   }
 
   fixedFigure() {
-    const X = this.piece.x;
-    const Y = this.piece.y;
-    for (let y = 0; y < Y; y += 1) {
-      for (let x = 0; x < Y; x += 1) {
-        if (this.tempField[Y + y][X + x] === 1) {
-          this.tempField[Y + y][X + x] = 3;
+    let count = 4;
+    for (let y = this.tempField.length - 1; y >= 0; y -= 1) {
+      for (let x = this.tempField[y].length; x >= 0; x -= 1) {
+        if (this.tempField[y][x] === 1) {
+          this.tempField[y][x] = 3;
+          count += 1;
+          if (count === 4) { break; }
         }
       }
     }
@@ -62,6 +63,7 @@ class Player {
           this.field[clearY][x] = 0;
         }
         count += 1;
+        y += 1;
       }
     }
     return count;
@@ -71,8 +73,8 @@ class Player {
     if ((lines - 1) === 0) {
       return this;
     }
-    this.field.shift();
     for (let i = 0; i < lines - 1; i += 1) {
+      this.field.shift();
       this.field.push(
         [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
       );
@@ -107,7 +109,10 @@ class Player {
     const field = this.tempField;
     for (let y = 0; y < this.piece.currentFigure().length; y += 1) {
       for (let x = 0; x < this.piece.currentFigure()[y].length; x += 1) {
-        field[Y + y][X + x] = field[Y + y][X + x] === 1 ? 0 : field[Y + y][X + x];
+        if ((x + X) >= 0 && (x + X) < field[0].length
+        && (y + Y) >= 0 && (y + Y) < field.length) {
+          field[Y + y][X + x] = field[Y + y][X + x] === 1 ? 0 : field[Y + y][X + x];
+        }
       }
     }
     return this;
@@ -137,9 +142,15 @@ class Player {
             && (Y + y) >= 0 && (Y + y) < this.tempField.length) {
           this.tempField[Y + y][X + x] = this.piece.currentFigure()[y][x];
           if (this.tempField[Y + y][X + x] !== 0 && this.tempField[Y + y][X + x] % 2 === 0) {
+            this.tempField = this.field;
             return undefined;
           }
         } else {
+          if (this.piece.currentFigure()[y][x] === 0) {
+            // eslint-disable-next-line no-continue
+            continue;
+          }
+          this.tempField = this.field;
           return undefined;
         }
       }
@@ -156,7 +167,15 @@ class Player {
     this.tempField = this.field.map((row) => row.slice());
     let result;
 
-    if (this.actions[action]) {
+    if (action === 'down') {
+      result = this
+        .clearField()
+        .changeCoordinates(this.actions.down)
+        ?.putFigure();
+      if (result === undefined) {
+        result = this.fixedFigure();
+      }
+    } else if (this.actions[action]) {
       result = this
         .clearField()
         .changeCoordinates(this.actions[action])
@@ -166,20 +185,15 @@ class Player {
         .clearField()
         .rotateFigure()
         ?.putFigure();
-    } else if (action === 'down') {
-      result = this
-        .clearField()
-        .changeCoordinates(this.actions.down)
-        ?.putFigure();
-      if (result === undefined) {
-        result = this.fixedFigure();
-      }
     } else if (action === 'drop') {
       do {
         result = this
           .clearField()
           .changeCoordinates(this.actions.down)
           ?.putFigure();
+        if (result !== undefined) {
+          this.field = this.tempField.map((row) => row.slice());
+        }
       } while (result !== undefined);
       result = this.fixedFigure();
     }
