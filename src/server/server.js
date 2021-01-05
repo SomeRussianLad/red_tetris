@@ -27,22 +27,29 @@ class Server {
 
   createSocketRoutes() {
     this.io.on('connection', (socket) => {
-      console.log('conn');
       socket.on('disconnect', () => {
         Object.values(socket.rooms).forEach((room) => {
-          const game = this.game[room];
-          console.log('disc');
+          const game = this.games[room];
 
           if (game) {
             const hostRoom = `game-${socket.id}`;
 
             game.removePlayer(socket.id);
 
+            // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
+              this.io.sockets.clients(room).forEach((s) => {
+                s.leave(room);
+              });
               delete this.games[room];
+              return;
             }
 
-            if (Object.values(game.players).length === 0) {
+            // Если все игроки неактивны/проиграли, удалить игру
+            if (Object.values(game.players).every((player) => !player.isAlive)) {
+              this.io.sockets.clients(room).forEach((s) => {
+                s.leave(room);
+              });
               delete this.games[room];
             }
           }
@@ -52,11 +59,11 @@ class Server {
       socket.on('list-games', () => {
         socket.emit('list-games', {
           data: Object.values(this.games).map((game) => game.id),
+          status: 200,
         });
       });
 
       socket.on('new-game', () => {
-        console.log('new');
         const id = `game-${socket.id}`;
 
         if (this.games[id]) {
@@ -71,7 +78,7 @@ class Server {
         const game = new Game(id);
 
         this.games[id] = game;
-        game.createPlayer(id);
+        game.createPlayer(socket.id);
 
         socket.join(id);
         socket.emit('new-game', {
@@ -114,7 +121,7 @@ class Server {
 
         const playerId = `player-${socket.id}`;
 
-        game.createPlayer(playerId);
+        game.createPlayer(socket.id);
         socket.join(id);
 
         this.io.in(id).emit('join-game', {
@@ -123,6 +130,54 @@ class Server {
           message: 'Joined game session successfully',
           status: 200,
         });
+      });
+
+      socket.on('quit-game', (message) => {
+        const { id } = message;
+        const game = this.games[id];
+        const playerId = `player-${socket.id}`;
+
+        if (!game) {
+          socket.emit('quit-game', {
+            id,
+            message: 'You are not in this game',
+            status: 400,
+          });
+          return;
+        }
+
+        game.removePlayer(socket.id);
+
+        socket.emit('quit-game', {
+          id,
+          message: 'You left the game',
+          status: 200,
+        });
+        socket.leave(id);
+
+        io.to(id).emit('quit-game', {
+          id,
+          playerId,
+          message: `One of the players left: ${playerId}`,
+          status: 200,
+        });
+
+        // Если вышел хост, удалить игру
+        if (`game-${socket.id}` === id && !game.isActive) {
+          this.io.sockets.clients(id).forEach((s) => {
+            s.leave(id);
+          });
+          delete this.games[id];
+          return;
+        }
+
+        // Если все игроки неактивны/проиграли, удалить игру
+        if (Object.values(game.players).every((player) => !player.isAlive)) {
+          this.io.sockets.clients(id).forEach((s) => {
+            s.leave(id);
+          });
+          delete this.games[id];
+        }
       });
 
       socket.on('start-game', () => {
@@ -151,25 +206,28 @@ class Server {
 
         this.io.in(id).emit('start-game', {
           id,
-          message: 'Game started',
+          message: 'Game session started successfully',
           status: 200,
         });
 
         const interval = setInterval(() => {
           const data = game.updateState();
 
-          if (data.gameStatus === 'terminated') {
+          if (!data) {
             this.io.in(id).emit('new-state', {
               id,
               message: 'Game session terminated',
               status: 0,
             });
-            socket.leave(id);
+            this.io.sockets.clients(id).forEach((s) => {
+              s.leave(id);
+            });
             clearInterval(interval);
+            return;
           }
 
           this.io.in(id).emit('new-state', data);
-        }, 500);
+        }, 1000);
       });
 
       socket.on('player-action', (message) => {
@@ -203,28 +261,20 @@ class Server {
           });
           return;
         }
-
-        const data = game.playerAction(action, playerId);
-
-        if (data.status === 200) {
-          this.io.in(id).emit('new-state', data);
-        } else {
-          socket.emit('new-state', {
-            id,
-            message: 'Action not permitted',
-            status: 400,
-          });
-        }
+        this.io.in(id).emit('new-state', game.playerAction(action, playerId));
       });
     });
     return this;
   }
 
   listen() {
-    this.http.listen(this.port, this.host, () => {
+    return this.http.listen(this.port, this.host, () => {
       process.stdout.write(`Listening on http://${this.host}:${this.port}\n`);
     });
-    return this;
+  }
+
+  close() {
+    return this.http.close();
   }
 }
 
