@@ -38,8 +38,8 @@ class Server {
 
             // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
-              this.io.sockets.clients(room).forEach((socket) => {
-                socket.leave(room);
+              this.io.sockets.clients(room).forEach((s) => {
+                s.leave(room);
               });
               delete this.games[room];
               return;
@@ -47,11 +47,10 @@ class Server {
 
             // Если все игроки неактивны/проиграли, удалить игру
             if (Object.values(game.players).every((player) => !player.isAlive)) {
-              this.io.sockets.clients(room).forEach((socket) => {
-                socket.leave(room);
+              this.io.sockets.clients(room).forEach((s) => {
+                s.leave(room);
               });
               delete this.games[room];
-              return;
             }
           }
         });
@@ -165,8 +164,8 @@ class Server {
 
         // Если вышел хост, удалить игру
         if (`game-${socket.id}` === id && !game.isActive) {
-          this.io.sockets.clients(id).forEach((socket) => {
-            socket.leave(id);
+          this.io.sockets.clients(id).forEach((s) => {
+            s.leave(id);
           });
           delete this.games[id];
           return;
@@ -174,11 +173,10 @@ class Server {
 
         // Если все игроки неактивны/проиграли, удалить игру
         if (Object.values(game.players).every((player) => !player.isAlive)) {
-          this.io.sockets.clients(id).forEach((socket) => {
-            socket.leave(id);
+          this.io.sockets.clients(id).forEach((s) => {
+            s.leave(id);
           });
           delete this.games[id];
-          return;
         }
       });
 
@@ -221,8 +219,8 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
-            this.io.sockets.clients(id).forEach((socket) => {
-              socket.leave(id);
+            this.io.sockets.clients(id).forEach((s) => {
+              s.leave(id);
             });
             clearInterval(interval);
             return;
