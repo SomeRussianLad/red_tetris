@@ -18,3 +18,11 @@ export const setListGame = () => (dispatch) => {
   });
   socket.emit('list-games');
 };
+
+// eslint-disable-next-line no-unused-vars
+export const joinGame = (id) => (dispatch) => {
+  socket.on('join-game', (res) => {
+    console.log(res);
+  });
+  socket.emit('join-game', { id });
+};
