@@ -32,6 +32,7 @@ class Player {
     ];
     this.tempField = undefined;
     this.piece = undefined;
+    this.reducer = (accumulator, value) => accumulator + value;
     this.isAlive = true;
   }
 
@@ -46,6 +47,36 @@ class Player {
       }
     }
     this.piece = undefined;
+    return this;
+  }
+
+  clearFullLine() {
+    let count = 0;
+    let clearY = 0;
+    for (let y = this.field.length - 1; y >= 0; y -= 1) {
+      if (this.field[y].reduce(this.reducer) === 30) {
+        for (let x = 0; x < this.field[y].length; x += 1) {
+          for (clearY = y; clearY > 0; clearY -= 1) {
+            this.field[clearY][x] = this.field[clearY - 1][x];
+          }
+          this.field[clearY][x] = 0;
+        }
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  addPenaltyLine(lines) {
+    if ((lines - 1) === 0) {
+      return this;
+    }
+    this.field.shift();
+    for (let i = 0; i < lines - 1; i += 1) {
+      this.field.push(
+        [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      );
+    }
     return this;
   }
 
@@ -122,10 +153,6 @@ class Player {
   }
 
   action(action = 'left') {
-    if (this.isAlive === false) {
-      return false;
-    }
-
     this.tempField = this.field.map((row) => row.slice());
     let result;
 
@@ -139,7 +166,7 @@ class Player {
         .clearField()
         .rotateFigure()
         ?.putFigure();
-    } else if (action === 'update') {
+    } else if (action === 'down') {
       result = this
         .clearField()
         .changeCoordinates(this.actions.down)
@@ -158,9 +185,8 @@ class Player {
     }
     if (result !== undefined) {
       this.field = this.tempField;
-      return true;
     }
-    return false;
+    return this.clearFullLine();
   }
 
   updateState() {
@@ -168,9 +194,8 @@ class Player {
       this.action('down');
     } else if (!this.spawnFigure()) {
       this.isAlive = false;
-      return false;
     }
-    return true;
+    return this.clearFullLine();
   }
 }
 
