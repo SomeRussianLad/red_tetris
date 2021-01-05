@@ -16,27 +16,6 @@ class Game {
     this.isActive = false;
   }
 
-  updateState() {
-    const states;
-
-    if(Object.values(this.players).every((player) => !player.isAlive)) {
-      return false;
-    }
-
-    Object.values(this.players).forEach((player) => {
-      player.updateState();
-      states[player.id] = {
-        field: player.field,
-        isAlive: player.isAlive,
-      }
-    });
-
-    return {
-      id: this.id,
-      states,
-    };
-  }
-
   createPlayer(id) {
     const playerId = `player-${id}`;
     const player = new Player(playerId);
@@ -48,20 +27,47 @@ class Game {
     const playerId = `player-${id}`;
 
     if (this.players[playerId]) {
-      delete this.players[playerId];
+      // delete this.players[playerId]; // ???
+      this.players[playerId].isAlive = false;
     }
   }
 
-  playerAction(action, id) {
-    this.players[id].action(action);
+  updateState() {
+    const states = {};
+
+    if (Object.values(this.players).every((player) => !player.isAlive)) {
+      return undefined;
+    }
 
     Object.values(this.players).forEach((player) => {
-      fields[player.id] = player.field;
+      player.updateState();
+      states[player.id] = {
+        field: player.field,
+        isAlive: player.isAlive,
+      };
     });
 
     return {
       id: this.id,
-      fields,
+      states,
+    };
+  }
+
+  playerAction(action, id) {
+    const states = {};
+
+    this.players[id].action(action);
+
+    Object.values(this.players).forEach((player) => {
+      states[player.id] = {
+        field: player.field,
+        isAlive: player.isAlive,
+      };
+    });
+
+    return {
+      id: this.id,
+      states,
     };
   }
 }

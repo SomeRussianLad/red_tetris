@@ -38,6 +38,12 @@ class Server {
             game.removePlayer(socket.id);
 
             if (room === hostRoom && !game.isActive) {
+              // io.in(room).clients((e, sockets) => {
+              //   if (e) {
+              //     throw e;
+              //   }
+              //   sockets.forEach(s => { io.sockets. });
+              // })
               delete this.games[room];
             }
 
@@ -121,6 +127,43 @@ class Server {
           message: 'Joined game session successfully',
           status: 200,
         });
+      });
+
+      socket.on('quit-game', (message) => {
+        const { id } = message;
+        const game = this.games[id];
+        const playerId = `player-${socket.id}`;
+
+        if (!game) {
+          socket.emit('quit-game', {
+            id,
+            message: 'You are not in this game',
+            status: 400,
+          });
+          return;
+        }
+
+        game.removePlayer(socket.id);
+
+        socket.emit('quit-game', {
+          id,
+          message: 'You left the game',
+          status: 200,
+        });
+        socket.leave(id);
+
+        io.to(id).emit('quit-game', {
+          id,
+          playerId,
+          message: `One of the players left: ${playerId}`,
+          status: 200,
+        });
+
+        // Если вышел хост и игра не началась - удалить игру
+        // if (`game-${socket.id}` === id && !game.isActive) {
+        // }
+
+        // Если вышел последний игрок - удалить игру
       });
 
       socket.on('start-game', () => {
