@@ -17,7 +17,7 @@ const NewGame = ({ dispatchNewGame, game }) => {
 
   useEffect(() => {
     if (game !== '') {
-      setResponse(`http://127.0.0.1:5000/game/${game}`);
+      setResponse(`http://127.0.0.1:3000/game/${game}`);
       setLink(`game/${game}`);
     }
   }, [game]);

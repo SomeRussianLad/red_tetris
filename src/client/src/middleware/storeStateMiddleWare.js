@@ -30,6 +30,10 @@ export const joinGame = (id) => (dispatch) => {
     // status: 200
   });
   socket.emit('join-game', { id });
+};
+
+// eslint-disable-next-line no-unused-vars
+export const getMap = () => (dispatch) => {
   socket.on('new-state', (message) => {
     console.log(message);
     if (message.status === 200) {

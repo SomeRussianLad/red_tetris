@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import styles from './game.module.scss';
-import { joinGame, startGame } from '../../middleware/storeStateMiddleWare';
+import { getMap, joinGame, startGame } from '../../middleware/storeStateMiddleWare';
 
 const mapTetris = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -42,7 +42,10 @@ const Pixel = ({ color }) => (
 );
 
 // eslint-disable-next-line react/prop-types
-const Game = ({ dispatchJoinGame, dispatchStartGame, game }) => {
+const Game = ({
+  // eslint-disable-next-line react/prop-types
+  dispatchJoinGame, dispatchGetMap, dispatchStartGame, game, map,
+}) => {
   /* eslint-disable */
   const { id } = useParams();
 
@@ -50,6 +53,12 @@ const Game = ({ dispatchJoinGame, dispatchStartGame, game }) => {
     if(id)
     dispatchJoinGame(id);
   },[]);
+
+  useEffect(() => {
+    if(id)
+      dispatchGetMap();
+    console.log(map);
+  },[map]);
 
   const start = () => {
     dispatchStartGame();
@@ -79,10 +88,12 @@ const Game = ({ dispatchJoinGame, dispatchStartGame, game }) => {
  const mapDispatchToProps = {
   dispatchJoinGame: joinGame,
    dispatchStartGame: startGame,
+   dispatchGetMap: getMap,
 };
 
 const mapStateToProps = (state) => ({
   game: state.game.game,
+  map: state.game.myMap,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Game);
