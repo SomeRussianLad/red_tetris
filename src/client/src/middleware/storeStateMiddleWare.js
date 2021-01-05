@@ -1,6 +1,6 @@
 import socketIOClient from 'socket.io-client';
 import handleErrors from '../utils/handleErrors';
-import { setGame, setList } from '../store/actions/actionGame';
+import { setGame, setList, setMap } from '../store/actions/actionGame';
 
 const socket = socketIOClient();
 
@@ -32,6 +32,9 @@ export const joinGame = (id) => (dispatch) => {
   socket.emit('join-game', { id });
   socket.on('new-state', (message) => {
     console.log(message);
+    if (message.status === 200) {
+      setMap(message.states);
+    } else handleErrors(message);
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // states:
     // 2y3PSr0iqVtmVp4nAAAB:
