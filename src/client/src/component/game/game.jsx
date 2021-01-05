@@ -44,31 +44,10 @@ const Game = () => {
   const [gamesList, setGamesList] = useState({});
 
   useEffect(() => {
-    const socket = io('http://0.0.0.0:5000');
-    socket.on('list-game', (msg) => {
-      setGamesList(msg)
-    });
-
-    socket.on('new-game', (msg) => {
-      console.log('>>> new game')
-    });
-
     socket.on('join-game', (msg) => {
       console.log(msg)
     });
 
-    socket.on('start-game', () => {
-      console.log('>>> start game')
-    });
-
-    socket.on('action', (msg) => {
-      console.log('>>> coming soon', msg)
-    });
-
-    socket.on('disconnect', () => {
-      console.log('>>> disconnect')
-    });
-    // return () => socket.close();
   });
 
   return (
