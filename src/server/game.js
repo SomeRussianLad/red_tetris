@@ -4,7 +4,7 @@ class Game {
   constructor(id) {
     this.id = id;
     this.players = {};
-    this.playerLimit = 8;
+    this.playerLimit = 4;
     this.isActive = false;
   }
 
@@ -40,7 +40,17 @@ class Game {
     }
 
     Object.values(this.players).forEach((player) => {
-      player.updateState();
+      const removedLines = player.updateState();
+
+      if (removedLines) {
+        Object.values(this.players).forEach((p) => {
+          if (player.id !== p.id) {
+            p.addPenaltyLine(removedLines);
+          }
+        });
+      }
+
+      if (player.updateState()) {}
       states[player.id] = {
         field: player.field,
         isAlive: player.isAlive,
@@ -50,15 +60,18 @@ class Game {
     return {
       id: this.id,
       states,
+      status: 200,
     };
   }
 
   playerAction(action, id) {
     const states = {};
-
-    this.players[id].action(action);
+    const removedLines = this.players[id].action(action);
 
     Object.values(this.players).forEach((player) => {
+      if (removedLines && player.id !== p.id) {
+        p.addPenaltyLine(removedLines);
+      }
       states[player.id] = {
         field: player.field,
         isAlive: player.isAlive,
@@ -68,6 +81,7 @@ class Game {
     return {
       id: this.id,
       states,
+      status: 200,
     };
   }
 }

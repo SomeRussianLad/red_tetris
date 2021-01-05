@@ -22,7 +22,6 @@ class Server {
   }
 
   createHttp() {
-    this.app.get('/', (req, res) => { res.send('a'); });
     return this;
   }
 
@@ -37,18 +36,22 @@ class Server {
 
             game.removePlayer(socket.id);
 
+            // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
-              // io.in(room).clients((e, sockets) => {
-              //   if (e) {
-              //     throw e;
-              //   }
-              //   sockets.forEach(s => { io.sockets. });
-              // })
+              this.io.sockets.clients(room).forEach((socket) => {
+                socket.leave(room);
+              });
               delete this.games[room];
+              return;
             }
 
-            if (Object.values(game.players).length === 0) {
+            // Если все игроки неактивны/проиграли, удалить игру
+            if (Object.values(game.players).every((player) => !player.isAlive)) {
+              this.io.sockets.clients(room).forEach((socket) => {
+                socket.leave(room);
+              });
               delete this.games[room];
+              return;
             }
           }
         });
@@ -57,6 +60,7 @@ class Server {
       socket.on('list-games', () => {
         socket.emit('list-games', {
           data: Object.values(this.games).map((game) => game.id),
+          status: 200,
         });
       });
 
@@ -159,11 +163,23 @@ class Server {
           status: 200,
         });
 
-        // Если вышел хост и игра не началась - удалить игру
-        // if (`game-${socket.id}` === id && !game.isActive) {
-        // }
+        // Если вышел хост, удалить игру
+        if (`game-${socket.id}` === id && !game.isActive) {
+          this.io.sockets.clients(id).forEach((socket) => {
+            socket.leave(id);
+          });
+          delete this.games[id];
+          return;
+        }
 
-        // Если вышел последний игрок - удалить игру
+        // Если все игроки неактивны/проиграли, удалить игру
+        if (Object.values(game.players).every((player) => !player.isAlive)) {
+          this.io.sockets.clients(id).forEach((socket) => {
+            socket.leave(id);
+          });
+          delete this.games[id];
+          return;
+        }
       });
 
       socket.on('start-game', () => {
@@ -205,7 +221,9 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
-            socket.leave(id);
+            this.io.sockets.clients(id).forEach((socket) => {
+              socket.leave(id);
+            });
             clearInterval(interval);
             return;
           }
