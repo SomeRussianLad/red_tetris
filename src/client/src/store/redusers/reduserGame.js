@@ -6,7 +6,6 @@ const initialState = {
   game: '',
   list: [],
   myMap: {},
-  otherMap: {},
   playerId: '',
 };
 

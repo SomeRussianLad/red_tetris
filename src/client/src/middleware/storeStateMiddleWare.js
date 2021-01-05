@@ -27,9 +27,8 @@ export const joinGame = (id) => (dispatch) => {
   socket.on('join-game', (res) => {
     if (res.status === 200) {
       const user = res.playerId.split('-');
-      setPlayer(user[1]);
+      dispatch(setPlayer(user[1]));
     }
-    console.log(res);
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // message: "Joined game session successfully"
     // playerId: "player-rHRTqE1MljOEnWglAAAH"
@@ -43,7 +42,7 @@ export const getMap = () => (dispatch) => {
   socket.on('new-state', (message) => {
     console.log(message);
     if (message.status === 200) {
-      setMap(message.states);
+      dispatch(setMap(message.states));
     } else handleErrors(message);
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // states:

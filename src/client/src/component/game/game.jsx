@@ -1,31 +1,31 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import styles from './game.module.scss';
 import { getMap, joinGame, startGame } from '../../middleware/storeStateMiddleWare';
 
-const mapTetris = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-];
+// const mapTetris = [
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+//   [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+// ];
 
 const nextFigure = [
   [0, 0, 0, 0],
@@ -47,6 +47,7 @@ const Game = ({
   dispatchJoinGame, dispatchGetMap, dispatchStartGame, game, map,
 }) => {
   /* eslint-disable */
+  const [startGame,setStartGame] = useState(false);
   const { id } = useParams();
 
   useEffect(() => {
@@ -55,20 +56,21 @@ const Game = ({
   },[]);
 
   useEffect(() => {
-    if(id)
+    if(startGame)
       dispatchGetMap();
     console.log(map);
-  },[map]);
+  },[map, startGame]);
 
   const start = () => {
     dispatchStartGame();
+    setStartGame(true);
   }
 
   return (
     <div className={styles.container}>
       {id === game && (<button onClick={start}>START</button>)}
       <div className={styles.containerMap}>
-        {mapTetris.map((str) => (
+        { map.field && map.field.length && map.field.map((str) => (
           <div className={styles.containerStr}>
             {str.map((color) => <Pixel color={color} />)}
           </div>
@@ -96,4 +98,5 @@ const mapStateToProps = (state) => ({
   map: state.game.myMap,
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Game);
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo
+(Game));
