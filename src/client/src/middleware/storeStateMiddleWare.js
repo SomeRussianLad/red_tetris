@@ -6,7 +6,6 @@ const socket = socketIOClient();
 
 export const setNewGame = () => (dispatch) => {
   socket.on('new-game', (res) => {
-    console.log(res.id);
     if (res.status !== 200) handleErrors(res);
     dispatch(setGame(res.id));
   });
