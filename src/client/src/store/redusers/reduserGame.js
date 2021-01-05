@@ -1,7 +1,7 @@
 import { SET_LIST_GAME, SET_NEW_GAME } from '../actions/actionGame';
 
 const initialState = {
-  game: [],
+  game: '',
   list: [],
 };
 

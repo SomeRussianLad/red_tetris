@@ -12,8 +12,13 @@ const NewGame = ({ dispatchNewGame, game }) => {
   const [link, setLink] = useState('');
 
   useEffect(() => {
-    if (!response) {
+    if (response === '') {
       dispatchNewGame();
+    }
+  }, [response]);
+
+  useEffect(() => {
+    if (game !== '') {
       setResponse(`http://127.0.0.1:5000/game/${game}`);
       setLink(`game/${game}`);
     }
@@ -23,6 +28,7 @@ const NewGame = ({ dispatchNewGame, game }) => {
     <div className={styles.container}>
       <div>
         <input className={styles.input} value={response} />
+        {console.log(response)}
         <CopyToClipboard text={response}>
           <img className={styles.copy} src={Copy} alt="copy" />
         </CopyToClipboard>

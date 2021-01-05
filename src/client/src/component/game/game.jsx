@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import * as io from 'socket.io-client';
 import styles from './game.module.scss';
 
 const mapTetris = [
