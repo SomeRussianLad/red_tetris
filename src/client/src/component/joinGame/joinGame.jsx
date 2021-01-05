@@ -9,7 +9,7 @@ import { setListGame } from '../../middleware/storeStateMiddleWare';
 const JoinGame = ({ list, dispatchList }) => {
   useEffect(() => {
     // eslint-disable-next-line react/prop-types
-    if (!(list && list.length)) dispatchList();
+    dispatchList();
   }, []);
 
   return (

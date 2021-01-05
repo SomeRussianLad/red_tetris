@@ -30,7 +30,7 @@ const NewGame = ({ dispatchNewGame, game }) => {
           <img className={styles.copy} src={Copy} alt="copy" />
         </CopyToClipboard>
       </div>
-      <NavLink clasName={styles.link} to={link}>Go to the Game</NavLink>
+      <NavLink className={styles.link} to={link}>Go to the Game</NavLink>
     </div>
   );
 };

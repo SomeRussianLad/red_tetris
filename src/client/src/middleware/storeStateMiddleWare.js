@@ -8,6 +8,7 @@ export const setNewGame = () => (dispatch) => {
   socket.on('new-game', (res) => {
     if (res.status !== 200) handleErrors(res);
     dispatch(setGame(res.id));
+    socket.off('new-game');
   });
   socket.emit('new-game');
 };
@@ -25,4 +26,12 @@ export const joinGame = (id) => (dispatch) => {
     console.log(res);
   });
   socket.emit('join-game', { id });
+};
+
+// eslint-disable-next-line no-unused-vars
+export const startGame = () => (dispatch) => {
+  socket.on('start-game', (res) => {
+    console.log(res);
+  });
+  socket.emit('start-game');
 };
