@@ -24,8 +24,23 @@ export const setListGame = () => (dispatch) => {
 export const joinGame = (id) => (dispatch) => {
   socket.on('join-game', (res) => {
     console.log(res);
+    // id: "game-2y3PSr0iqVtmVp4nAAAB"
+    // message: "Joined game session successfully"
+    // playerId: "player-rHRTqE1MljOEnWglAAAH"
+    // status: 200
   });
   socket.emit('join-game', { id });
+  socket.on('new-state', (message) => {
+    console.log(message);
+    // id: "game-2y3PSr0iqVtmVp4nAAAB"
+    // states:
+    // 2y3PSr0iqVtmVp4nAAAB:
+    // eslint-disable-next-line max-len
+    // field: (20) [Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10), Array(10)]
+    // isAlive: true
+    // __proto__: Object
+    // rHRTqE1MljOEnWglAAAH: {field: Array(20), isAlive: true}
+  });
 };
 
 // eslint-disable-next-line no-unused-vars
