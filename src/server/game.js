@@ -33,7 +33,7 @@ class Game {
   }
 
   updateState() {
-    const states = {};
+    const states = [];
 
     if (Object.values(this.players).every((player) => !player.isAlive)) {
       return undefined;
@@ -50,10 +50,12 @@ class Game {
         });
       }
 
-      states[player.id] = {
+      states.push({
+        id: player.id,
         field: player.field,
         isAlive: player.isAlive,
-      };
+        nextPiece: player.nextPiece(),
+      });
     });
 
     return {
@@ -64,7 +66,7 @@ class Game {
   }
 
   playerAction(action, id) {
-    const states = {};
+    const states = [];
     const player = this.players[id];
     const removedLines = player.action(action);
 
@@ -72,10 +74,13 @@ class Game {
       if (removedLines && player !== p.id) {
         p.addPenaltyLine(removedLines);
       }
-      states[p.id] = {
+
+      states.push({
+        id: p.id,
         field: p.field,
         isAlive: p.isAlive,
-      };
+        nextPiece: p.nextPiece(),
+      });
     });
 
     return {
