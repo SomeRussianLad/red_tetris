@@ -27,8 +27,8 @@ class Server {
 
   createSocketRoutes() {
     this.io.on('connection', (socket) => {
-      socket.on('disconnect', () => {
-        Object.values(socket.rooms).forEach((room) => {
+      socket.on('disconnecting', () => {
+        socket.rooms.forEach((room) => {
           const game = this.games[room];
 
           if (game) {
@@ -38,16 +38,15 @@ class Server {
 
             // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
-              this.io.sockets.clients(room).forEach((s) => {
+              this.io.of('/').in(room).sockets.forEach((s) => {
                 s.leave(room);
               });
               delete this.games[room];
-              return;
             }
 
             // Если все игроки неактивны/проиграли, удалить игру
             if (Object.values(game.players).every((player) => !player.isAlive)) {
-              this.io.sockets.clients(room).forEach((s) => {
+              this.io.of('/').in(room).sockets.forEach((s) => {
                 s.leave(room);
               });
               delete this.games[room];
@@ -68,7 +67,7 @@ class Server {
 
         if (this.games[id]) {
           socket.emit('new-game', {
-            id,
+            id: null,
             message: 'Previous session not closed',
             status: 400,
           });
@@ -219,7 +218,7 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
-            this.io.sockets.clients(id).forEach((s) => {
+            this.io.of('/').in(id).sockets.forEach((s) => {
               s.leave(id);
             });
             clearInterval(interval);
