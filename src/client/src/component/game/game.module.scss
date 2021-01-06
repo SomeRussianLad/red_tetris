@@ -5,12 +5,12 @@
 
 .container{
   display: flex;
-  background-color: #9eae86;
 flex-direction: row;
 }
 .containerMap {
   width: 400px;
   margin-left: 10px;
+  background-color: #9eae86;
   display: flex;
   flex-direction: column;
   border: 2px solid black;

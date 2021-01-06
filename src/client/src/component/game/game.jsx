@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import styles from './game.module.scss';
-import { getMap, joinGame, startGame } from '../../middleware/storeStateMiddleWare';
+import {
+  actionGame, getMap, joinGame, startGame,
+} from '../../middleware/storeStateMiddleWare';
 
 // eslint-disable-next-line react/prop-types
 const Pixel = ({ color }) => (
@@ -15,9 +17,12 @@ const Pixel = ({ color }) => (
 const Game = ({
   // eslint-disable-next-line react/prop-types
   dispatchJoinGame, dispatchGetMap, dispatchStartGame, game, map,
+  // eslint-disable-next-line no-unused-vars,react/prop-types
+  dispatchAction,
 }) => {
   /* eslint-disable */
   const [startGame,setStartGame] = useState(false);
+  const [action, setAction] = useState('');
   const { id } = useParams();
 
   useEffect(() => {
@@ -31,6 +36,21 @@ const Game = ({
     console.log(map);
   },[map, startGame]);
 
+  useEffect(() =>{
+    document.addEventListener("keydown",handleKeyPress);
+  },[])
+
+  const handleKeyPress = ({code}) => {
+    const ACTION = {
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      ArrowUp: 'rotate',
+      ArrowDown: 'down',
+      Space: 'drop',
+    }
+     dispatchAction({id: game, action: ACTION[code]})
+  }
+
   const start = () => {
     dispatchStartGame();
     setStartGame(true);
@@ -39,8 +59,10 @@ const Game = ({
   return (
     <div className={styles.container}>
       {id === game && (<button onClick={start}>START</button>)}
-      <div className={styles.containerMap}>
-        {map && map.field && map.field.length && map.field.map((str) => (
+      {map && map.isAlive &&
+        <div>
+        <div className={styles.containerMap}>
+        { map.field && map.field.length && map.field.map((str) => (
           <div className={styles.containerStr}>
             {str.map((color) => <Pixel color={color} />)}
           </div>
@@ -53,6 +75,7 @@ const Game = ({
           </div>
         ))}
       </div>
+    </div>}
     </div>
   );
 };
@@ -61,11 +84,13 @@ const Game = ({
   dispatchJoinGame: joinGame,
    dispatchStartGame: startGame,
    dispatchGetMap: getMap,
+   dispatchAction: actionGame,
 };
 
 const mapStateToProps = (state) => ({
   game: state.game.game,
   map: state.game.myMap,
+  otherMap: state.game.myMap,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(React.memo
