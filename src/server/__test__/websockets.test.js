@@ -403,6 +403,133 @@ describe('On start game', () => {
   });
 });
 
+describe('On player actions', () => {
+  jest.setTimeout(8000);
+  test('should return status 200 first new-state after start game', (done) => {
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      clientSocket.emit('player-action', {
+        id: gameId,
+        action: 'left',
+      });
+    });
+
+    clientSocket.on('new-state', (message) => {
+      expect(message.status).toBe(200);
+      done();
+    });
+
+    clientSocket.emit('new-game');
+  });
+  test('should return status 200 on \'left\' and \'right\' action', (done) => {
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      clientSocket.emit('player-action', {
+        id: gameId,
+        action: 'left',
+      });
+      clientSocket.emit('player-action', {
+        id: gameId,
+        action: 'left',
+      });
+    });
+    count = 0;
+    clientSocket.on('new-state', (message) => {
+      expect(message.status).toBe(200);
+      count += 1;
+      if (count === 2) {
+        done();
+      }
+    });
+    clientSocket.emit('new-game');
+  });
+  test('should return status 200 after 10 left turns', (done) => {
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      for (let i = 0; i < 10; i += 1) {
+        clientSocket.emit('player-action', {
+          id: gameId,
+          action: 'left',
+        });
+      }
+    });
+    count = 0;
+    clientSocket.on('new-state', (message) => {
+      expect(message.status).toBe(200);
+      count += 1;
+      if (count === 10) {
+        done();
+      }
+    });
+    clientSocket.emit('new-game');
+  });
+  test('should return status 400 after send action without permission', (done) => {
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: message.id });
+      clientSocket.emit('quit-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      clientSocket.emit('player-action', {
+        id: gameId,
+        action: 'left',
+      });
+    });
+    clientSocket.on('player-action', (message) => {
+      expect(message.status).toBe(400);
+      done();
+    });
+    clientSocket.emit('new-game');
+  });
+
+  test('should return new state for all GAYmers after action among his', (done) => {
+    clientSocketTwo = clientIO('ws://127.0.0.1:5000', {
+      transports: ['websocket'],
+    });
+    clientSocketTwo.on('connect', () => {
+      done();
+    });
+    clientSocket.on('new-game', ())
+  })
+});
+
 //  Должно быть ниже всех тестов
 describe('On disconnecting', () => {
   it('should remove INACTIVE game WITH NO other players if current player IS HOST', (done) => {
@@ -457,7 +584,7 @@ describe('On disconnecting', () => {
 
   it('should remove INACTIVE game WITH other players if current player IS HOST', (done) => {
     let gameId;
-    let otherClients = [];
+    const otherClients = [];
 
     for (let i = 0; i < Math.floor(Math.random() * 3 + 1); i += 1) {
       otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
