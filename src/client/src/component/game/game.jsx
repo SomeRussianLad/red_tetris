@@ -1,36 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import * as io from 'socket.io-client';
+import { connect } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import styles from './game.module.scss';
-
-const mapTetris = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-];
-
-const nextFigure = [
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 1, 0, 0],
-  [1, 1, 1, 0],
-];
+import { getMap, joinGame, startGame } from '../../middleware/storeStateMiddleWare';
 
 // eslint-disable-next-line react/prop-types
 const Pixel = ({ color }) => (
@@ -39,49 +11,43 @@ const Pixel = ({ color }) => (
   </div>
 );
 
-const Game = () => {
+// eslint-disable-next-line react/prop-types
+const Game = ({
+  // eslint-disable-next-line react/prop-types
+  dispatchJoinGame, dispatchGetMap, dispatchStartGame, game, map,
+}) => {
   /* eslint-disable */
-  const [gamesList, setGamesList] = useState({});
+  const [startGame,setStartGame] = useState(false);
+  const { id } = useParams();
 
   useEffect(() => {
-    const socket = io('http://0.0.0.0:5000');
-    socket.on('list-game', (msg) => {
-      setGamesList(msg)
-    });
+    if(id)
+    dispatchJoinGame(id);
+  },[]);
 
-    socket.on('new-game', (msg) => {
-      console.log('>>> new game')
-    });
+  useEffect(() => {
+    if(startGame)
+      dispatchGetMap();
+    console.log(map);
+  },[map, startGame]);
 
-    socket.on('join-game', (msg) => {
-      console.log(msg)
-    });
-
-    socket.on('start-game', () => {
-      console.log('>>> start game')
-    });
-
-    socket.on('action', (msg) => {
-      console.log('>>> coming soon', msg)
-    });
-
-    socket.on('disconnect', () => {
-      console.log('>>> disconnect')
-    });
-    // return () => socket.close();
-  });
+  const start = () => {
+    dispatchStartGame();
+    setStartGame(true);
+  }
 
   return (
     <div className={styles.container}>
+      {id === game && (<button onClick={start}>START</button>)}
       <div className={styles.containerMap}>
-        {mapTetris.map((str) => (
+        {map && map.field && map.field.length && map.field.map((str) => (
           <div className={styles.containerStr}>
             {str.map((color) => <Pixel color={color} />)}
           </div>
         ))}
       </div>
       <div className={styles.containerMap}>
-        {nextFigure.map((str) => (
+        {map && map.nextPiece && map.nextPiece.map((str) => (
           <div className={styles.containerStr}>
             {str.map((color) => <Pixel color={color} />)}
           </div>
@@ -91,4 +57,16 @@ const Game = () => {
   );
 };
 
-export default Game;
+ const mapDispatchToProps = {
+  dispatchJoinGame: joinGame,
+   dispatchStartGame: startGame,
+   dispatchGetMap: getMap,
+};
+
+const mapStateToProps = (state) => ({
+  game: state.game.game,
+  map: state.game.myMap,
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo
+(Game));

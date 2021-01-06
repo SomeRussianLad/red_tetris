@@ -26,8 +26,11 @@ class Piece {
   }
 
   updateState() {
+    this.nextShape = !this.nextShape ? new PieceGenerator().generatePiece() : this.nextShape;
     this.shape = this.nextShape;
     this.nextShape = new PieceGenerator().generatePiece();
+    this.x = 3;
+    this.y = 0;
   }
 }
 
