@@ -95,7 +95,7 @@ class Player {
       for (let x = 0; x < figure[0].length; x += 1) {
         if (x >= 0 && x < this.field[0].length
           && y >= 0 && y < this.field.length) {
-          this.field[Y + y][X + x] = figure[y][x];
+          this.field[Y + y][X + x] += figure[y][x];
           if (this.field[Y + y][X + x] !== 0 && this.field[Y + y][X + x] % 2 === 0) {
             return undefined;
           }
@@ -144,7 +144,7 @@ class Player {
       for (let x = 0; x < this.piece.currentFigure()[y].length; x += 1) {
         if ((X + x) >= 0 && (X + x) < this.tempField[0].length
             && (Y + y) >= 0 && (Y + y) < this.tempField.length) {
-          this.tempField[Y + y][X + x] = this.piece.currentFigure()[y][x];
+          this.tempField[Y + y][X + x] += this.piece.currentFigure()[y][x];
           if (this.tempField[Y + y][X + x] !== 0 && this.tempField[Y + y][X + x] % 2 === 0) {
             this.tempField = this.field;
             return undefined;
@@ -208,6 +208,9 @@ class Player {
   }
 
   updateState() {
+    if (!this.isAlive) {
+      return undefined;
+    }
     if (this.piece.shape !== undefined) {
       this.action('down');
     } else if (!this.spawnFigure()) {
