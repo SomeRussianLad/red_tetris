@@ -54,7 +54,6 @@ export const getMap = () => (dispatch) => {
     // rHRTqE1MljOEnWglAAAH: {field: Array(20), isAlive: true}
   });
 };
-
 // eslint-disable-next-line no-unused-vars
 export const startGame = () => (dispatch) => {
   socket.on('start-game', (res) => {
