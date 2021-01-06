@@ -38,26 +38,22 @@ class Server {
 
             // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
-              this.io.of('/').in(room).sockets.forEach((value, key, map) => {
-                value.leave(room);
+              this.io.of('/').in(room).sockets.forEach((s) => {
+                s.leave(room);
               });
               delete this.games[room];
-              console.log(this.games);
-              return;
             }
 
             // Если все игроки неактивны/проиграли, удалить игру
-            // if (Object.values(game.players).every((player) => !player.isAlive)) {
-            //   this.io.sockets.clients(room).forEach((s) => {
-            //     s.leave(room);
-            //   });
-            //   delete this.games[room];
-            // }
+            if (Object.values(game.players).every((player) => !player.isAlive)) {
+              this.io.of('/').in(room).sockets.forEach((s) => {
+                s.leave(room);
+              });
+              delete this.games[room];
+            }
           }
         });
       });
-
-      socket.on('dosconnect', () => {});
 
       socket.on('list-games', () => {
         socket.emit('list-games', {
@@ -71,7 +67,7 @@ class Server {
 
         if (this.games[id]) {
           socket.emit('new-game', {
-            id,
+            id: null,
             message: 'Previous session not closed',
             status: 400,
           });
@@ -222,7 +218,7 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
-            this.io.sockets.clients(id).forEach((s) => {
+            this.io.of('/').in(id).sockets.forEach((s) => {
               s.leave(id);
             });
             clearInterval(interval);

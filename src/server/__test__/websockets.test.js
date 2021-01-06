@@ -33,61 +33,104 @@ afterEach((done) => {
   done();
 });
 
-// describe('On list-games', () => {
-//   it('should return an empty list when no games initialized', (done) => {
-//     clientSocket.on('list-games', (message) => {
-//       expect(message).toEqual({ data: [], status: 200 });
-//       // console.log(message);
-//       done();
-//     });
-//     clientSocket.emit('list-games');
-//   });
+describe('On new game', () => {
+  it('should return ID of a newly created session if player has NO OTHER SESSIONS', (done) => {
+    clientSocket.on('new-game', (message) => {
+      expect(message.id).toMatch(/game-(.*?)/);
+      expect(message.message).toBe('Game created successfully');
+      expect(message.status).toBe(200);
+      done();
+    });
 
-//   it('should return a list with a single item when only one game initialized', (done) => {
-//     clientSocket.emit('new-game');
-//     clientSocket.on('list-games', (message) => {
-//       expect(message.data.length).toBe(1);
-//       expect(message.data[0]).toMatch(/game-(.*?)/);
-//       done();
-//     });
-//     clientSocket.emit('list-games');
-//   });
+    clientSocket.emit('new-game');
+  });
 
-//   it('should return a list with a single item when only one game initialized and one game terminated at previous point', (done) => {
-//     clientSocket.emit('new-game');
-//     clientSocket.on('list-games', (message) => {
-//       expect(message.data.length).toBe(1);
-//       expect(message.data[0]).toMatch(/game-(.*?)/);
-//       done();
-//     });
+  it('should PROHIBIT creating new game if previous session not closed', (done) => {
+    let count = 0;
 
-//     clientSocket.emit('list-games');
-//   });
+    clientSocket.on('new-game', (message) => {
+      count += 1;
 
-//   it('should return a list with N items when N games initialized', (done) => {
-//     const N = Math.floor(Math.random() * 100);
+      if (count === 2) {
+        expect(message.id).toBe(null);
+        expect(message.message).toBe('Previous session not closed');
+        expect(message.status).toBe(400);
+        done();
+      }
+    });
+    clientSocket.emit('new-game');
+    clientSocket.emit('new-game');
+  });
+});
 
-//     let tempClients = [];
-//     for (let i = 0; i < N; i += 1) {
-//       const tempClientSocket = clientIO('ws://0.0.0.0:5000', {
-//         transports: ['websocket'],
-//       });
-//       tempClients = tempClients.concat(tempClientSocket);
-//     }
+describe('On list games', () => {
+  it('should return an EMPTY LIST when NO ONE initializes the game', (done) => {
+    clientSocket.on('list-games', (message) => {
+      expect(message.data.length).toBe(0);
+      expect(message.status).toBe(200);
+      done();
+    });
 
-//     clientSocket.emit('new-game');
-//     clientSocket.on('list-games', (message) => {
-//       expect(message.data.length).toBe(1);
-//       expect(message.data[0]).toMatch(/game-(.*?)/);
-//       done();
-//     });
+    clientSocket.emit('list-games');
+  });
 
-//     clientSocket.emit('list-games');
-//   });
-// });
+  it('should return a list with a SINGLE ITEM when ONE PLAYER initializes the game', (done) => {
+    clientSocket.on('list-games', (message) => {
+      expect(message.data.length).toBe(1);
+      expect(message.data[0]).toMatch(/game-(.*?)/);
+      expect(message.status).toBe(200);
+      done();
+    });
+
+    clientSocket.on('new-game', () => {
+      clientSocket.emit('list-games');
+    });
+
+    clientSocket.emit('new-game');
+  });
+
+  it('should return a list with SEVERAL ITEMS when SEVERAL PLAYERS initialize the game', (done) => {
+    const otherClients = [];
+
+    for (let i = 0; i < Math.floor(Math.random() * 3 + 1); i += 1) {
+      otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
+    }
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
+      setTimeout(() => {
+        done();
+      }, 250);
+    }
+
+    clientSocket.on('list-games', (message) => {
+      expect(message.data.length).toBe(otherClients.length + 1);
+      message.data.forEach((game) => {
+        expect(game).toMatch(/game-(.*?)/);
+      });
+      expect(message.status).toBe(200);
+
+      callbackDisconnect();
+    });
+
+    clientSocket.on('new-game', () => {
+      clientSocket.emit('list-games');
+    });
+
+    otherClients.forEach((otherClientSocket, i) => {
+      otherClientSocket.emit('new-game');
+      if (i === otherClients.length - 1) {
+        setTimeout(() => {
+          clientSocket.emit('new-game');
+        }, 250);
+      }
+    });
+  });
+});
 
 //  Должно быть ниже всех тестов
-describe('On disconnect', () => {
+describe('On disconnecting', () => {
   it('should remove INACTIVE game WITH NO other players if current player IS HOST', (done) => {
     let gameId;
 
@@ -95,9 +138,9 @@ describe('On disconnect', () => {
       clientSocket.disconnect();
       setTimeout(() => {
         expect(server.games[gameId]).toBeUndefined();
-        expect(server.games).toEqual({});
+        expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 25);
+      }, 250);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -118,9 +161,9 @@ describe('On disconnect', () => {
       clientSocket.disconnect();
       setTimeout(() => {
         expect(server.games[gameId]).toBeUndefined();
-        expect(server.games).toEqual({});
+        expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 25);
+      }, 250);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -150,16 +193,16 @@ describe('On disconnect', () => {
       clientSocket.disconnect();
       setTimeout(() => {
         expect(server.games[gameId]).toBeUndefined();
-        expect(server.games).toEqual({});
+        expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 25);
+      }, 250);
     }
 
     function callbackJoin() {
-      otherClients.forEach((client) => client.emit('join-game', { id: gameId }));
+      otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
       setTimeout(() => {
         callbackDisconnect();
-      }, 25);
+      }, 250);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -185,18 +228,17 @@ describe('On disconnect', () => {
       clientSocket.disconnect();
       setTimeout(() => {
         expect(server.games[gameId]).not.toBeUndefined();
-        expect(server.games).not.toEqual({});
         expect(Object.entries(server.games).length).toBe(1);
-        otherClients.forEach((client) => client.disconnect());
+        otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
         done();
-      }, 25);
+      }, 250);
     }
 
     function callbackJoin() {
-      otherClients.forEach((client) => client.emit('join-game', { id: gameId }));
+      otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
       setTimeout(() => {
         callbackDisconnect();
-      }, 25);
+      }, 250);
     }
 
     clientSocket.on('new-game', (message) => {
