@@ -21,7 +21,7 @@ class Piece {
     return this.shape[this.currentView];
   }
 
-  nextFigure() {
+  nextPiece() {
     return this.nextShape.display;
   }
 
