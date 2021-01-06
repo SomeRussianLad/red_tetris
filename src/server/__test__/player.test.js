@@ -10,32 +10,41 @@ PieceGenerator.prototype.generatePiece = mockGeneratePiece;
 
 beforeEach((done) => {
   player = new Player(1);
-  mockGeneratePiece.mockReturnValue(new Piece({
-    0:
+  mockGeneratePiece.mockReturnValue(
+    {
+      0:
       [
-        [1, 0, 0],
+        [0, 1, 0],
         [1, 1, 1],
         [0, 0, 0],
       ],
-    1:
+      1:
       [
+        [0, 1, 0],
         [0, 1, 1],
         [0, 1, 0],
-        [0, 1, 0],
       ],
-    2:
+      2:
       [
         [0, 0, 0],
         [1, 1, 1],
-        [0, 0, 1],
+        [0, 1, 0],
       ],
-    3:
+      3:
       [
         [0, 1, 0],
-        [0, 1, 0],
         [1, 1, 0],
+        [0, 1, 0],
       ],
-  }));
+      display:
+      [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 1, 0, 0],
+        [1, 1, 1, 0],
+      ],
+    },
+  );
   done();
 });
 
@@ -46,9 +55,10 @@ afterEach((done) => {
 
 describe('moving', () => {
   test('correct put elem to field', (done) => {
+    player.piece.nextShape = new PieceGenerator().generatePiece();
     player.updateState();
     expect(player.field).toEqual([
-      [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
       [0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -79,7 +89,7 @@ describe('moving', () => {
     player.action('left');
     player.action('left');
     expect(player.field).toEqual([
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
       [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -111,7 +121,7 @@ describe('moving', () => {
     player.action('right');
     player.action('right');
     expect(player.field).toEqual([
-      [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
       [0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],

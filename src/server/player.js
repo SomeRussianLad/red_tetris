@@ -1,3 +1,4 @@
+const Piece = require('./piece');
 const PieceGenerator = require('./piece-generator');
 
 class Player {
@@ -31,7 +32,10 @@ class Player {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
     this.tempField = undefined;
-    this.piece = undefined;
+    this.piece = new Piece(
+      undefined,
+      new PieceGenerator().generatePiece(),
+    );
     this.reducer = (accumulator, value) => accumulator + value;
     this.isAlive = true;
   }
@@ -47,7 +51,7 @@ class Player {
         }
       }
     }
-    this.piece = undefined;
+    this.piece.shape = undefined;
     return this;
   }
 
@@ -83,7 +87,7 @@ class Player {
   }
 
   spawnFigure() {
-    this.piece = new PieceGenerator().generatePiece();
+    this.piece.updateState();
     const figure = this.piece.currentFigure();
     const X = this.piece.x;
     const Y = this.piece.y;
@@ -204,7 +208,7 @@ class Player {
   }
 
   updateState() {
-    if (this.piece) {
+    if (this.piece.shape !== undefined) {
       this.action('down');
     } else if (!this.spawnFigure()) {
       this.isAlive = false;
