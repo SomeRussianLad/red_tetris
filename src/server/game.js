@@ -4,7 +4,7 @@ class Game {
   constructor(id) {
     this.id = id;
     this.players = {};
-    this.playerLimit = 4;
+    this.playerLimit = 3;
     this.isActive = false;
   }
 
@@ -55,7 +55,7 @@ class Game {
         id: player.id,
         field: player.field,
         isAlive: player.isAlive,
-        nextPiece: player.piece.nextPiece(),
+        nextPiece: player.piece.nextShape.display,
       });
     });
 
@@ -80,7 +80,7 @@ class Game {
         id: p.id,
         field: p.field,
         isAlive: p.isAlive,
-        nextPiece: p.piece.nextPiece(),
+        nextPiece: p.piece.nextShape.display,
       });
     });
 

@@ -5,6 +5,8 @@ let clientSocket;
 // let serverSocket;
 let server;
 
+jest.setTimeout(60000);
+
 beforeAll((done) => {
   server = new Server().createHttp().createSocketRoutes();
   // serverSocket = server.io;
@@ -383,8 +385,6 @@ describe('On start game', () => {
 
     clientSocket.on('new-state', (message) => {
       count += 1;
-
-      console.log(count);
 
       expect(message.id).toBe(`game-${clientSocket.id}`);
       expect(message.states.length).toBe(1);
