@@ -54,7 +54,7 @@ class Game {
         id: player.id,
         field: player.field,
         isAlive: player.isAlive,
-        nextPiece: player.nextPiece(),
+        nextPiece: player.piece.nextPiece(),
       });
     });
 
@@ -79,7 +79,7 @@ class Game {
         id: p.id,
         field: p.field,
         isAlive: p.isAlive,
-        nextPiece: p.nextPiece(),
+        nextPiece: p.piece.nextPiece(),
       });
     });
 
