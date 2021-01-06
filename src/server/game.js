@@ -28,8 +28,8 @@ class Game {
     const playerId = `player-${id}`;
 
     if (this.players[playerId]) {
-      // delete this.players[playerId]; // ???
-      this.players[playerId].isAlive = false;
+      delete this.players[playerId];
+      // this.players[playerId].isAlive = false;
     }
   }
 

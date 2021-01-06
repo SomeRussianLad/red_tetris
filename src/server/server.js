@@ -36,7 +36,6 @@ class Server {
 
             game.removePlayer(socket.id);
 
-            // Если вышел хост, удалить игру
             if (room === hostRoom && !game.isActive) {
               this.io.of('/').in(room).sockets.forEach((s) => {
                 s.leave(room);
@@ -45,7 +44,6 @@ class Server {
               return;
             }
 
-            // Если все игроки неактивны/проиграли, удалить игру
             if (Object.values(game.players).every((player) => !player.isAlive)) {
               this.io.of('/').in(room).sockets.forEach((s) => {
                 s.leave(room);
@@ -161,16 +159,16 @@ class Server {
           message: 'You left the game',
           status: 200,
         });
+
         socket.leave(id);
 
-        io.to(id).emit('quit-game', {
+        this.io.in(id).emit('quit-game', {
           id,
           playerId,
           message: `One of the players left: ${playerId}`,
           status: 200,
         });
 
-        // Если вышел хост, удалить игру
         if (`game-${socket.id}` === id && !game.isActive) {
           this.io.of('/').in(id).sockets.forEach((s) => {
             s.leave(id);
@@ -179,7 +177,6 @@ class Server {
           return;
         }
 
-        // Если все игроки неактивны/проиграли, удалить игру
         if (Object.values(game.players).every((player) => !player.isAlive)) {
           this.io.of('/').in(id).sockets.forEach((s) => {
             s.leave(id);
@@ -238,16 +235,9 @@ class Server {
         }, 1000);
       });
 
+      socket.on('restart-game', () => {});
+
       socket.on('player-action', (message) => {
-        /**
-         * Концептуально тут будет приём из даты action и сувание его игроку
-         * this.games[`game-${data.id}][socket.id].action('rotate');
-         *
-         * {
-         *    id: <id>
-         *    action: 'up' | 'down' | 'left' | 'right' | 'drop' | 'rotate',
-         * }
-         */
         const { id, action } = message;
         const game = this.games[id];
         const playerId = `player-${socket.id}`;

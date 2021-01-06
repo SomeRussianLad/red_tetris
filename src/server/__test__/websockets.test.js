@@ -265,9 +265,142 @@ describe('On join game', () => {
 });
 
 describe('On quit game', () => {
-  it('should REJECT request if there is no game with specified ID', (done) => {});
-  it('should ACCEPT request if player is in game', (done) => {});
-  it('should NOTIFY all players in the room', (done) => {});
+  it('should REJECT request if there is no game with specified ID', (done) => {
+    clientSocket.on('quit-game', (message) => {
+      expect(message.id).toBe('game-mockId');
+      expect(message.message).toBe('You are not in this game');
+      expect(message.status).toBe(400);
+      done();
+    });
+
+    clientSocket.emit('quit-game', { id: 'game-mockId' });
+  });
+
+  it('should ACCEPT request if player is in game', (done) => {
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('quit-game', { id: gameId });
+    });
+
+    clientSocket.on('quit-game', (message) => {
+      expect(message.id).toBe(gameId);
+      expect(message.message).toBe('You left the game');
+      expect(message.status).toBe(200);
+      done();
+    });
+
+    clientSocket.emit('new-game');
+  });
+
+  it('should NOTIFY all players in the room', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    let gameId;
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: gameId });
+      otherClient.emit('join-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', () => {
+      clientSocket.emit('start-game', { id: gameId });
+    });
+
+    clientSocket.on('start-game', () => {
+      otherClient.emit('quit-game', { id: gameId });
+    });
+
+    clientSocket.on('quit-game', (message) => {
+      const otherPlayerId = `player-${otherClient.id}`;
+
+      expect(message.id).toBe(gameId);
+      expect(message.playerId).toBe(otherPlayerId);
+      expect(message.message).toBe(`One of the players left: ${otherPlayerId}`);
+      expect(message.status).toBe(200);
+      expect(server.games[gameId].players[otherPlayerId]).toBeUndefined();
+      done();
+    });
+
+    clientSocket.emit('new-game');
+  });
+});
+
+describe('On start game', () => {
+  it('should REJECT request if there are no games to start', (done) => {
+    clientSocket.on('start-game', (message) => {
+      expect(message.id).toBe(`game-${clientSocket.id}`);
+      expect(message.message).toBe('No opened sessions to start');
+      expect(message.status).toBe(400);
+      done();
+    });
+
+    clientSocket.emit('start-game');
+  });
+
+  it('should REJECT request if the game is active', (done) => {
+    let count = 0;
+
+    clientSocket.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      count += 1;
+      if (count === 2) {
+        expect(message.id).toBe(`game-${clientSocket.id}`);
+        expect(message.message).toBe('Already started');
+        expect(message.status).toBe(400);
+        done();
+      }
+    });
+
+    clientSocket.emit('new-game');
+  });
+
+  it('should ACCEPT otherwise and receive new game states', (done) => {
+    let count = 0;
+
+    clientSocket.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      expect(message.id).toBe(`game-${clientSocket.id}`);
+      expect(message.message).toBe('Game session started successfully');
+      expect(message.status).toBe(200);
+    });
+
+    clientSocket.on('new-state', (message) => {
+      count += 1;
+
+      console.log(count);
+
+      expect(message.id).toBe(`game-${clientSocket.id}`);
+      expect(message.states.length).toBe(1);
+      expect(message.states[0].id).toBe(`player-${clientSocket.id}`);
+      expect(message.states[0].field).not.toBeUndefined();
+      expect(message.states[0].nextPiece).not.toBeUndefined();
+      expect(message.states[0].isAlive).toBe(true);
+      expect(message.status).toBe(200);
+
+      if (count === 5) {
+        done();
+      }
+    });
+
+    clientSocket.emit('new-game');
+  });
 });
 
 //  Должно быть ниже всех тестов
