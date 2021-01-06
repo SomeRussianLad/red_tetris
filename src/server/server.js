@@ -42,6 +42,7 @@ class Server {
                 s.leave(room);
               });
               delete this.games[room];
+              return;
             }
 
             // Если все игроки неактивны/проиграли, удалить игру
@@ -90,6 +91,7 @@ class Server {
       socket.on('join-game', (message) => {
         const { id } = message;
         const game = this.games[id];
+        const playerId = `player-${socket.id}`;
 
         if (!game) {
           socket.emit('join-game', {
@@ -100,10 +102,19 @@ class Server {
           return;
         }
 
-        if (socket.rooms[id]) {
+        if (game.players[playerId]) {
           socket.emit('join-game', {
             id,
             message: 'Already joined',
+            status: 400,
+          });
+          return;
+        }
+
+        if ([...socket.rooms.values()].some((r) => /game-(.*?)/.test(r))) {
+          socket.emit('join-game', {
+            id,
+            message: 'Already joined other session',
             status: 400,
           });
           return;
@@ -117,8 +128,6 @@ class Server {
           });
           return;
         }
-
-        const playerId = `player-${socket.id}`;
 
         game.createPlayer(socket.id);
         socket.join(id);
@@ -163,7 +172,7 @@ class Server {
 
         // Если вышел хост, удалить игру
         if (`game-${socket.id}` === id && !game.isActive) {
-          this.io.sockets.clients(id).forEach((s) => {
+          this.io.of('/').in(id).sockets.forEach((s) => {
             s.leave(id);
           });
           delete this.games[id];
@@ -172,7 +181,7 @@ class Server {
 
         // Если все игроки неактивны/проиграли, удалить игру
         if (Object.values(game.players).every((player) => !player.isAlive)) {
-          this.io.sockets.clients(id).forEach((s) => {
+          this.io.of('/').in(id).sockets.forEach((s) => {
             s.leave(id);
           });
           delete this.games[id];
@@ -252,7 +261,7 @@ class Server {
           return;
         }
 
-        if (!socket.rooms[id]) {
+        if (!game.players[playerId]) {
           socket.emit('player-action', {
             id,
             message: 'No permission to access this game session',

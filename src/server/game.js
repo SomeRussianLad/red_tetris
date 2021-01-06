@@ -10,6 +10,7 @@ class Game {
 
   startGame() {
     this.isActive = true;
+    this.updateState();
   }
 
   pauseGame() {

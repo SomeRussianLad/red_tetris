@@ -100,7 +100,7 @@ describe('On list games', () => {
       otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
       setTimeout(() => {
         done();
-      }, 250);
+      }, 100);
     }
 
     clientSocket.on('list-games', (message) => {
@@ -122,10 +122,152 @@ describe('On list games', () => {
       if (i === otherClients.length - 1) {
         setTimeout(() => {
           clientSocket.emit('new-game');
-        }, 250);
+        }, 100);
       }
     });
   });
+});
+
+describe('On join game', () => {
+  it('should REJECT request when there is no game with specified ID', (done) => {
+    clientSocket.on('join-game', (message) => {
+      expect(message.id).toBe('game-mockId');
+      expect(message.message).toBe('No such game');
+      expect(message.status).toBe(400);
+      done();
+    });
+
+    clientSocket.emit('join-game', { id: 'game-mockId' });
+  });
+
+  it('should REJECT request when already joined', (done) => {
+    let gameId;
+    let calls = 0;
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      setTimeout(() => {
+        done();
+      }, 100);
+    }
+
+    clientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      calls += 1;
+      if (calls === 2) {
+        expect(message.id).toBe(gameId);
+        expect(message.message).toBe('Already joined');
+        expect(message.status).toBe(400);
+        callbackDisconnect();
+      } else {
+        clientSocket.emit('join-game', { id: gameId });
+      }
+    });
+
+    clientSocket.emit('new-game');
+  });
+
+  it('should REJECT request when already in other game', (done) => {
+    const otherClientSocket = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    let gameId;
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClientSocket.disconnect();
+      setTimeout(() => {
+        done();
+      }, 100);
+    }
+
+    otherClientSocket.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('new-game');
+    });
+
+    clientSocket.on('new-game', () => {
+      clientSocket.emit('join-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      expect(message.id).toBe(gameId);
+      expect(message.message).toBe('Already joined other session');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherClientSocket.emit('new-game');
+  });
+
+  it('should REJECT request when room is full', (done) => {
+    const otherHostClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    const otherClients = [];
+    let gameId;
+
+    for (let i = 0; i < 3; i += 1) {
+      otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
+    }
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherHostClient.disconnect();
+      otherClients.forEach((client) => client.disconnect());
+      setTimeout(() => {
+        done();
+      }, 100);
+    }
+
+    otherHostClient.on('new-game', (message) => {
+      gameId = message.id;
+      otherClients.forEach((client) => client.emit('join-game', { id: gameId }));
+      clientSocket.emit('join-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      expect(message.id).toBe(gameId);
+      expect(message.message).toBe('Room full');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherHostClient.emit('new-game');
+  });
+
+  it('should ACCEPT request otherwise', (done) => {
+    const otherHostClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    let gameId;
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherHostClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 100);
+    }
+
+    otherHostClient.on('new-game', (message) => {
+      gameId = message.id;
+      clientSocket.emit('join-game', { id: gameId });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      expect(message.id).toBe(gameId);
+      expect(message.message).toBe('Joined game session successfully');
+      expect(message.status).toBe(200);
+      callbackDisconnect();
+    });
+
+    otherHostClient.emit('new-game');
+  });
+});
+
+describe('On quit game', () => {
+  it('should REJECT request if there is no game with specified ID', (done) => {});
+  it('should ACCEPT request if player is in game', (done) => {});
+  it('should NOTIFY all players in the room', (done) => {});
 });
 
 //  Должно быть ниже всех тестов
@@ -139,7 +281,7 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 250);
+      }, 100);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -162,7 +304,7 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 250);
+      }, 100);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -194,14 +336,14 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 250);
+      }, 100);
     }
 
     function callbackJoin() {
       otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
       setTimeout(() => {
         callbackDisconnect();
-      }, 250);
+      }, 100);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -230,14 +372,14 @@ describe('On disconnecting', () => {
         expect(Object.entries(server.games).length).toBe(1);
         otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
         done();
-      }, 250);
+      }, 100);
     }
 
     function callbackJoin() {
       otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
       setTimeout(() => {
         callbackDisconnect();
-      }, 250);
+      }, 100);
     }
 
     clientSocket.on('new-game', (message) => {
