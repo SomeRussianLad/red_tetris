@@ -21,15 +21,16 @@ const Game = ({
   const { id } = useParams();
 
   useEffect(() => {
-    if(id)
-    dispatchJoinGame(id);
+    if(id) {
+      dispatchJoinGame(id);
+      dispatchGetMap();
+    }
   },[]);
 
   useEffect(() => {
     console.log(map);
-    if(startGame)
-      dispatchGetMap();
-  },[map, startGame]);
+    dispatchGetMap();
+  },[map]);
 
   useEffect(() =>{
     document.addEventListener("keydown",handleKeyPress);
@@ -44,7 +45,7 @@ const Game = ({
       Space: 'drop',
     }
     if(ACTION[code])
-     dispatchAction({id: game, action: ACTION[code]})
+      dispatchAction({id, action: ACTION[code]})
   }
 
   const start = () => {
@@ -55,47 +56,47 @@ const Game = ({
   return (
     <div className={styles.container}>
       {id === game && !startGame && (<div className={styles.started}>
-        <p className={styles.link}>{`http://localhost:5000/game/game-${id}`}</p>
-        <CopyToClipboard text={`http://localhost:5000/game/game-${id}`}>
+        <p className={styles.link}>{`localhost:3000/game/${id}`}</p>
+        <CopyToClipboard text={`localhost:3000/game/${id}`}>
           <img className={styles.copy} src={Copy} alt="copy" />
         </CopyToClipboard>
-      <button  className={styles.btn} onClick={start}>START</button>
-    </div>)}
+        <button  className={styles.btn} onClick={start}>START</button>
+      </div>)}
       {map && map.isAlive &&
-        <div className={styles.map}>
+      <div className={styles.map}>
         <div className={styles.containerMap}>
-        { map.field && map.field.length && map.field.map((str) => (
-          <div className={styles.containerStr}>
-            {str.map((color) => <Pixel color={color} />)}
-          </div>
-        ))}
-      </div>
-      <div className={styles.containerMap}>
-        {map && map.nextPiece && map.nextPiece.map((str) => (
-          <div className={styles.containerStr}>
-            {str.map((color) => <Pixel color={color} />)}
-          </div>
-        ))}
-      </div>
-          <div>
-            {otherMap && otherMap.map((itemMap) => (<div className={styles.containerMap}>
-                { itemMap && itemMap.field && itemMap.field.length && itemMap.field.map((str) => (
-                  <div className={styles.containerStr}>
-                    {str.map((color) => <Pixel color={color} />)}
-                  </div>
-                ))}
-              </div>))}
-          </div>
-    </div>}
+          { map.field && map.field.length && map.field.map((str) => (
+            <div className={styles.containerStr}>
+              {str.map((color) => <Pixel color={color} />)}
+            </div>
+          ))}
+        </div>
+        <div className={styles.containerMap}>
+          {map && map.nextPiece && map.nextPiece.map((str) => (
+            <div className={styles.containerStr}>
+              {str.map((color) => <Pixel color={color} />)}
+            </div>
+          ))}
+        </div>
+        <div>
+          {otherMap && otherMap.map((itemMap) => (<div className={styles.containerMap}>
+            { itemMap && itemMap.field && itemMap.field.length && itemMap.field.map((str) => (
+              <div className={styles.containerStr}>
+                {str.map((color) => <Pixel color={color} />)}
+              </div>
+            ))}
+          </div>))}
+        </div>
+      </div>}
     </div>
   );
 };
 
- const mapDispatchToProps = {
+const mapDispatchToProps = {
   dispatchJoinGame: joinGame,
-   dispatchStartGame: startGame,
-   dispatchGetMap: getMap,
-   dispatchAction: actionGame,
+  dispatchStartGame: startGame,
+  dispatchGetMap: getMap,
+  dispatchAction: actionGame,
 };
 
 const mapStateToProps = (state) => ({
