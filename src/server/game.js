@@ -53,12 +53,7 @@ class Game {
         });
       }
 
-      states.push({
-        id: player.id,
-        field: player.field,
-        isAlive: player.isAlive,
-        nextPiece: player.piece.nextShape.display,
-      });
+      states.push(player.getState());
     });
 
     return {
