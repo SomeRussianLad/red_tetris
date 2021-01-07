@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "jest",
-    "lint": "eslint --fix --ext .js ."
+    "lint": "eslint --ignore-path .eslintignore --fix --ext .js ."
   },
   "dependencies": {
     "dotenv": "*",
@@ -29,6 +29,9 @@
   },
   "jest": {
     "collectCoverage": true,
-    "coverageReporters": ["json", "html"]
+    "coverageReporters": [
+      "json",
+      "html"
+    ]
   }
 }

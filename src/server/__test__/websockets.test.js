@@ -53,7 +53,7 @@ describe('On new game', () => {
       count += 1;
 
       if (count === 2) {
-        expect(message.id).toBe(null);
+        expect(message.id).toBeNull();
         expect(message.message).toBe('Previous session not closed');
         expect(message.status).toBe(400);
         done();
@@ -93,16 +93,16 @@ describe('On list games', () => {
   it('should return a list with SEVERAL ITEMS when SEVERAL PLAYERS initialize the game', (done) => {
     const otherClients = [];
 
-    for (let i = 0; i < Math.floor(Math.random() * 3 + 1); i += 1) {
+    for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
       otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
     }
 
     function callbackDisconnect() {
       clientSocket.disconnect();
-      otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
+      otherClients.forEach((otherClient) => otherClient.disconnect());
       setTimeout(() => {
         done();
-      }, 100);
+      }, 10);
     }
 
     clientSocket.on('list-games', (message) => {
@@ -119,14 +119,99 @@ describe('On list games', () => {
       clientSocket.emit('list-games');
     });
 
-    otherClients.forEach((otherClientSocket, i) => {
-      otherClientSocket.emit('new-game');
+    otherClients.forEach((otherClient, i) => {
+      otherClient.emit('new-game');
       if (i === otherClients.length - 1) {
         setTimeout(() => {
           clientSocket.emit('new-game');
-        }, 100);
+        }, 10);
       }
     });
+  });
+});
+
+describe('On list players', () => {
+  it('should REJECT request when there is no game with specified ID', (done) => {
+    clientSocket.on('list-players', (message) => {
+      expect(message.id).toBeNull();
+      expect(message.message).toBe('No such game');
+      expect(message.status).toBe(400);
+      done();
+    });
+
+
+    clientSocket.emit('list-players', { id: 'game-mockId' });
+  });
+
+  it('should REJECT request when current user NOT in session', (done) => {
+    const otherClients = [];
+
+    for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
+      otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
+    }
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClients.forEach((otherClient) => otherClient.disconnect());
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    clientSocket.on('list-players', (message) => {
+      expect(message.id).toBeNull();
+      expect(message.message).toBe('No permission to access this game session');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherClients[0].on('new-game', (message) => {
+      otherClients.forEach((otherClient, i) => {
+        if (i > 0) {
+          otherClient.emit('join-game', { id: message.id })
+        }
+      })
+      setTimeout(() => {
+        clientSocket.emit('list-players', { id: message.id });
+      }, 10)
+    });
+
+    otherClients[0].emit('new-game');
+  });
+
+  it('should ACCEPT request and return a list of players otherwise', (done) => {
+    const otherClients = [];
+
+    for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
+      otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
+    }
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClients.forEach((otherClient) => otherClient.disconnect());
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    clientSocket.on('new-game', (message) => {
+      otherClients.forEach((otherClient) => otherClient.emit('join-game', { id: message.id }));
+      setTimeout(() => {
+        clientSocket.emit('list-players', { id: message.id });
+      }, 10);
+    });
+
+    clientSocket.on('list-players', (message) => {
+      expect(message.id).toMatch(/game-(.*?)/);
+      expect(message.data.length).toBe(otherClients.length + 1);
+      message.data.forEach((player) => {
+        expect(player).toMatch(/player-(.*?)/);
+      });
+      expect(message.status).toBe(200);
+      callbackDisconnect();
+    });
+
+    clientSocket.emit('new-game');
   });
 });
 
@@ -150,7 +235,7 @@ describe('On join game', () => {
       clientSocket.disconnect();
       setTimeout(() => {
         done();
-      }, 100);
+      }, 10);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -174,18 +259,18 @@ describe('On join game', () => {
   });
 
   it('should REJECT request when already in other game', (done) => {
-    const otherClientSocket = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
     let gameId;
 
     function callbackDisconnect() {
       clientSocket.disconnect();
-      otherClientSocket.disconnect();
+      otherClient.disconnect();
       setTimeout(() => {
         done();
-      }, 100);
+      }, 10);
     }
 
-    otherClientSocket.on('new-game', (message) => {
+    otherClient.on('new-game', (message) => {
       gameId = message.id;
       clientSocket.emit('new-game');
     });
@@ -201,7 +286,7 @@ describe('On join game', () => {
       callbackDisconnect();
     });
 
-    otherClientSocket.emit('new-game');
+    otherClient.emit('new-game');
   });
 
   it('should REJECT request when room is full', (done) => {
@@ -219,7 +304,7 @@ describe('On join game', () => {
       otherClients.forEach((client) => client.disconnect());
       setTimeout(() => {
         done();
-      }, 100);
+      }, 10);
     }
 
     otherHostClient.on('new-game', (message) => {
@@ -247,7 +332,7 @@ describe('On join game', () => {
       otherHostClient.disconnect();
       setTimeout(() => {
         done();
-      }, 100);
+      }, 10);
     }
 
     otherHostClient.on('new-game', (message) => {
@@ -401,6 +486,265 @@ describe('On start game', () => {
 
     clientSocket.emit('new-game');
   });
+
+  it('should terminate game when all players lost', (done) => {
+    clientSocket.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      server.games[message.id].players[`player-${clientSocket.id}`].isAlive = false;
+    });
+
+    clientSocket.on('new-state', (message) => {
+      expect(message.id).toBe(`game-${clientSocket.id}`);
+      expect(message.message).toBe('Game session terminated');
+      expect(message.status).toBe(0);
+      done();
+    });
+
+    clientSocket.emit('new-game');
+  });
+
+  it('should not delete players on termination', (done) => {
+    clientSocket.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      server.games[message.id].players[`player-${clientSocket.id}`].isAlive = false;
+    });
+
+    clientSocket.on('new-state', (message) => {
+      expect(Object.values(server.games[message.id].players).length).toBe(1);
+      done();
+    });
+
+    clientSocket.emit('new-game');
+  });
+});
+
+describe('On restart game', () => {
+  it('should REJECT request if there is no game with specified ID', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    otherClient.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      otherClient.emit('start-game', { id: message.id });
+    });
+
+    otherClient.on('start-game', (message) => {
+      Object.values(server.games[message.id].players).forEach((player) => player.isAlive = false);
+    });
+
+    otherClient.on('new-state', (message) => {
+      if (message.message === 'Game session terminated') {
+        otherClient.emit('restart-game', { id: 'game-mockId' });
+      }
+    });
+
+    otherClient.on('restart-game', (message) => {
+      expect(message.id).toBeNull();
+      expect(message.message).toBe('No such game');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherClient.emit('new-game');
+  });
+
+  it('should REJECT request if current player is not host', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    otherClient.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      otherClient.emit('start-game', { id: message.id });
+    });
+
+    otherClient.on('start-game', (message) => {
+      Object.values(server.games[message.id].players).forEach((player) => player.isAlive = false);
+    });
+
+    clientSocket.on('new-state', (message) => {
+      if (message.message === 'Game session terminated') {
+        clientSocket.emit('restart-game', { id: message.id });
+      }
+    });
+
+    clientSocket.on('restart-game', (message) => {
+      expect(message.id).toBe(`game-${otherClient.id}`);
+      expect(message.message).toBe('You are not host');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherClient.emit('new-game');
+  });
+
+  it('should REJECT request if game is not terminated', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    otherClient.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+
+    clientSocket.on('join-game', (message) => {
+      otherClient.emit('start-game', { id: message.id });
+    });
+
+    otherClient.on('start-game', (message) => {
+      otherClient.emit('restart-game', { id: message.id });
+    });
+
+    otherClient.on('restart-game', (message) => {
+      expect(message.id).toBe(`game-${otherClient.id}`);
+      expect(message.message).toBe('Game is still active');
+      expect(message.status).toBe(400);
+      callbackDisconnect();
+    });
+
+    otherClient.emit('new-game');
+  });
+
+  it('should ACCEPT otherwise and all players must migrate successfully', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+
+    let gameId;
+    let clientId;
+    let otherClientId;
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    otherClient.on('new-game', (message) => {
+      clientSocket.emit('join-game', { id: message.id });
+    });
+    
+    clientSocket.on('join-game', (message) => {
+      gameId = message.id;
+      clientId = `player-${clientSocket.id}`
+      otherClientId = `player-${otherClient.id}`;
+      otherClient.emit('start-game', { id: message.id });
+    });
+
+    otherClient.on('start-game', (message) => {
+      Object.values(server.games[message.id].players).forEach((player) => player.isAlive = false);
+    });
+
+    otherClient.on('new-state', (message) => {
+      if (message.message === 'Game session terminated') {
+        otherClient.emit('restart-game', { id: message.id });
+      }
+    })
+
+    otherClient.on('restart-game', (message) => {
+      expect(message.id).toBe(`game-${otherClient.id}`);
+      expect(message.message).toBe('Game session restarted successfully');
+      expect(message.status).toBe(200);
+
+      let newGameId = message.id;
+      let newClientId = server.games[newGameId].players[clientId].id;
+      let newOtherClientId = server.games[newGameId].players[otherClientId].id;
+
+      expect(newGameId).toBe(gameId);
+      expect(newClientId).toBe(clientId);
+      expect(newOtherClientId).toBe(otherClientId);
+
+      callbackDisconnect();
+    });
+
+    otherClient.emit('new-game');
+  });
+
+  it('should send new states', (done) => {
+    const otherClient = clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] });
+    let count = 0;
+
+    function callbackDisconnect() {
+      clientSocket.disconnect();
+      otherClient.disconnect();
+      setTimeout(() => {
+        done();
+      }, 10);
+    }
+
+    clientSocket.on('new-game', (message) => {
+      otherClient.emit('join-game', { id: message.id });
+    });
+    
+    otherClient.on('join-game', (message) => {
+      clientSocket.emit('start-game', { id: message.id });
+    });
+
+    clientSocket.on('start-game', (message) => {
+      Object.values(server.games[message.id].players).forEach((player) => player.isAlive = false);
+    });
+
+    clientSocket.on('new-state', (message) => {
+      if (message.message === 'Game session terminated') {
+        // console.log(message);
+        // console.log(server.games[message.id]);
+        // console.log('Are all players dead: ', Object.values(server.games[message.id].players).every((player) => !player.isAlive));
+        setTimeout(() => {
+          clientSocket.emit('restart-game', { id: message.id });
+        }, 1000)
+        return;
+      }
+    })
+
+    clientSocket.on('restart-game', (message) => {
+      count += 1;
+      console.log(message);
+      console.log(server.games[message.id]);
+      console.log('Are all players dead: ', Object.values(server.games[message.id].players).every((player) => !player.isAlive));
+      if (count === 20) callbackDisconnect();
+    });
+
+    clientSocket.emit('new-game');
+  });
 });
 
 // describe('On player actions', () => {
@@ -541,7 +885,7 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 100);
+      }, 10);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -564,7 +908,7 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 100);
+      }, 10);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -586,7 +930,7 @@ describe('On disconnecting', () => {
     let gameId;
     const otherClients = [];
 
-    for (let i = 0; i < Math.floor(Math.random() * 3 + 1); i += 1) {
+    for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
       otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
     }
 
@@ -596,14 +940,14 @@ describe('On disconnecting', () => {
         expect(server.games[gameId]).toBeUndefined();
         expect(Object.entries(server.games).length).toBe(0);
         done();
-      }, 100);
+      }, 10);
     }
 
     function callbackJoin() {
-      otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
+      otherClients.forEach((otherClient) => otherClient.emit('join-game', { id: gameId }));
       setTimeout(() => {
         callbackDisconnect();
-      }, 100);
+      }, 10);
     }
 
     clientSocket.on('new-game', (message) => {
@@ -621,7 +965,7 @@ describe('On disconnecting', () => {
     let gameId;
     const otherClients = [];
 
-    for (let i = 0; i < Math.floor(Math.random() * 3 + 1); i += 1) {
+    for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
       otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
     }
 
@@ -630,30 +974,70 @@ describe('On disconnecting', () => {
       setTimeout(() => {
         expect(server.games[gameId]).not.toBeUndefined();
         expect(Object.entries(server.games).length).toBe(1);
-        otherClients.forEach((otherClientSocket) => otherClientSocket.disconnect());
+        otherClients.forEach((otherClient) => otherClient.disconnect());
         done();
-      }, 100);
+      }, 10);
     }
 
     function callbackJoin() {
-      otherClients.forEach((otherClientSocket) => otherClientSocket.emit('join-game', { id: gameId }));
+      otherClients.forEach((otherClient) => otherClient.emit('join-game', { id: gameId }));
       setTimeout(() => {
-        callbackDisconnect();
-      }, 100);
+        clientSocket.emit('start-game', { id: gameId });
+      }, 10);
     }
-
+    
     clientSocket.on('new-game', (message) => {
       gameId = message.id;
       expect(message.id).toMatch(/game-(.*?)/);
       expect(message.message).toBe('Game created successfully');
       expect(message.status).toBe(200);
-      clientSocket.emit('start-game', { id: gameId });
-    });
-
-    clientSocket.on('start-game', () => {
       callbackJoin();
+    });
+    
+    clientSocket.on('start-game', () => {
+      callbackDisconnect();
     });
 
     clientSocket.emit('new-game');
   });
+
+  // it('should remove game that has all players disconnected', (done) => {
+  //   let gameId;
+  //   const otherClients = [];
+
+  //   for (let i = 0; i < Math.floor(Math.random() * 2 + 1); i += 1) {
+  //     otherClients.push(clientIO('ws://127.0.0.1:5000', { transports: ['websocket'] }));
+  //   }
+
+  //   function callbackDisconnect() {
+  //     clientSocket.disconnect();
+  //     otherClients.forEach((otherClient) => otherClient.disconnect());
+  //     setTimeout(() => {
+  //       expect(server.games[gameId]).toBeUndefined();
+  //       expect(Object.entries(server.games).length).toBe(0);
+  //       done();
+  //     }, 10);
+  //   }
+
+  //   function callbackJoin() {
+  //     otherClients.forEach((otherClient) => otherClient.emit('join-game', { id: gameId }));
+  //     setTimeout(() => {
+  //       clientSocket.emit('start-game', { id: gameId });
+  //     }, 10);
+  //   }
+    
+  //   clientSocket.on('new-game', (message) => {
+  //     gameId = message.id;
+  //     expect(message.id).toMatch(/game-(.*?)/);
+  //     expect(message.message).toBe('Game created successfully');
+  //     expect(message.status).toBe(200);
+  //     callbackJoin();
+  //   });
+    
+  //   clientSocket.on('start-game', () => {
+  //     callbackDisconnect();
+  //   });
+
+  //   clientSocket.emit('new-game');
+  // });
 });

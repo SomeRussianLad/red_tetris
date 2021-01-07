@@ -5,6 +5,8 @@ const express = require('express');
 const io = require('socket.io');
 const Game = require('./game');
 
+const DEFAULT_TIMEOUT = 10;
+
 class Server {
   constructor() {
     this.host = process.env.HOST || '0.0.0.0';
@@ -44,10 +46,7 @@ class Server {
               return;
             }
 
-            if (Object.values(game.players).every((player) => !player.isAlive)) {
-              this.io.of('/').in(room).sockets.forEach((s) => {
-                s.leave(room);
-              });
+            if (!Object.values(game.players).length) {
               delete this.games[room];
             }
           }
@@ -61,7 +60,34 @@ class Server {
         });
       });
 
-      // list-players !!!
+      socket.on('list-players', (message) => {
+        const { id } = message;
+        const game = this.games[id];
+
+        if (!game) {
+          socket.emit('list-players', {
+            id: null,
+            message: 'No such game',
+            status: 400,
+          });
+          return;
+        }
+
+        if (!game.players[`player-${socket.id}`]) {
+          socket.emit('list-players', {
+            id: null,
+            message: 'No permission to access this game session',
+            status: 400,
+          });
+          return;
+        }
+
+        socket.emit('list-players', {
+          id,
+          data: Object.values(game.players).map((player) => player.id),
+          status: 200,
+        });
+      });
 
       socket.on('new-game', () => {
         const id = `game-${socket.id}`;
@@ -78,7 +104,6 @@ class Server {
         const game = new Game(id);
 
         this.games[id] = game;
-
         game.createPlayer(socket.id);
         socket.join(id);
 
@@ -180,10 +205,7 @@ class Server {
           return;
         }
 
-        if (Object.values(game.players).every((player) => !player.isAlive)) {
-          this.io.of('/').in(id).sockets.forEach((s) => {
-            s.leave(id);
-          });
+        if (!Object.values(game.players).length) {
           delete this.games[id];
         }
       });
@@ -227,63 +249,54 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
+            game.pauseGame();
             clearInterval(interval);
             return;
           }
 
           this.io.in(id).emit('new-state', data);
-        }, 1000);
+        }, DEFAULT_TIMEOUT);
       });
 
       socket.on('restart-game', (message) => {
         const { id } = message;
         const game = this.games[id];
 
-        // Имеешь ли право или вошь ебаная
-        if (`game-${socket.id}` !== id) {
-          socket.emit('restart-game', {
-            id: null,
-            message: 'You are not host',
-            status: 400,
-          });
-          return;
-        }
-
-        // Есть ли игра
         if (!game) {
           socket.emit('restart-game', {
             id: null,
+            message: 'No such game',
+            status: 400,
+          });
+          return;
+        }
+
+        if (`game-${socket.id}` !== id) {
+          socket.emit('restart-game', {
+            id,
             message: 'You are not host',
             status: 400,
           });
           return;
         }
 
-        // Закончилась ли игра
         if (game.isActive) {
           socket.emit('restart-game', {
-            id: null,
+            id,
             message: 'Game is still active',
             status: 400,
           });
           return;
         }
 
-        // Создать игру
         const newGame = new Game(id);
 
-        // Мигрировать игроков
         Object.values(game.players).forEach((player) => {
           newGame.createPlayer(player.id);
         });
 
-        // Удалить старую игру
         delete this.games[id];
-
-        // Мигрировать игру
         this.games[id] = newGame;
-
-        // Запустить сессию
         newGame.startGame();
 
         this.io.in(id).emit('restart-game', {
@@ -301,12 +314,13 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
+            game.pauseGame();
             clearInterval(interval);
             return;
           }
 
           this.io.in(id).emit('new-state', data);
-        }, 1000);
+        }, DEFAULT_TIMEOUT);
       });
 
       socket.on('player-action', (message) => {
