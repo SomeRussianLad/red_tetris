@@ -88,14 +88,13 @@ class Player {
 
   spawnFigure() {
     this.piece.updateState();
-    const figure = this.piece.currentFigure();
     const X = this.piece.x;
     const Y = this.piece.y;
-    for (let y = 0; y < figure.length; y += 1) {
-      for (let x = 0; x < figure[0].length; x += 1) {
-        if (x >= 0 && x < this.field[0].length
+    for (let y = 0; y < this.piece.currentFigure().length; y += 1) {
+      for (let x = 0; x < this.piece.currentFigure().length; x += 1) {
+        if (x >= 0 && x < this.piece.currentFigure().length
           && y >= 0 && y < this.field.length) {
-          this.field[Y + y][X + x] += figure[y][x];
+          this.field[Y + y][X + x] += this.piece.currentFigure()[y][x];
           if (this.field[Y + y][X + x] !== 0 && this.field[Y + y][X + x] % 2 === 0) {
             return undefined;
           }
