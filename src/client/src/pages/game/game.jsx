@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useParams } from 'react-router-dom';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 import styles from './game.module.scss';
 import {
   actionGame, getMap, joinGame, startGame,
 } from '../../middleware/storeStateMiddleWare';
-
-// eslint-disable-next-line react/prop-types
-const Pixel = ({ color }) => (
-  <div className={color === 0 ? styles.wrapperPixel : styles.wrapperPixelBlack}>
-    <div className={color === 0 ? styles.pixel : styles.pixelBlack} />
-  </div>
-);
+import Pixel from '../../components/pixel/pixel';
+import Copy from '../../common/copy.png';
 
 // eslint-disable-next-line react/prop-types
 const Game = ({
@@ -30,6 +26,7 @@ const Game = ({
   },[]);
 
   useEffect(() => {
+    console.log(map);
     if(startGame)
       dispatchGetMap();
   },[map, startGame]);
@@ -46,6 +43,7 @@ const Game = ({
       ArrowDown: 'down',
       Space: 'drop',
     }
+    if(ACTION[code])
      dispatchAction({id: game, action: ACTION[code]})
   }
 
@@ -56,7 +54,13 @@ const Game = ({
 
   return (
     <div className={styles.container}>
-      {id === game && !startGame && (<button onClick={start}>START</button>)}
+      {id === game && !startGame && (<div className={styles.started}>
+        <p className={styles.link}>{`http://localhost:5000/game/game-${id}`}</p>
+        <CopyToClipboard text={`http://localhost:5000/game/game-${id}`}>
+          <img className={styles.copy} src={Copy} alt="copy" />
+        </CopyToClipboard>
+      <button  className={styles.btn} onClick={start}>START</button>
+    </div>)}
       {map && map.isAlive &&
         <div className={styles.map}>
         <div className={styles.containerMap}>
@@ -74,7 +78,6 @@ const Game = ({
         ))}
       </div>
           <div>
-            {console.log('otherMap',otherMap)}
             {otherMap && otherMap.map((itemMap) => (<div className={styles.containerMap}>
                 { itemMap && itemMap.field && itemMap.field.length && itemMap.field.map((str) => (
                   <div className={styles.containerStr}>
