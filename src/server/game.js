@@ -18,7 +18,9 @@ class Game {
   }
 
   createPlayer(id) {
-    const playerId = `player-${id}`;
+    const playerId = id.slice(0, 7) === 'player-'
+      ? id
+      : `player-${id}`;
     const player = new Player(playerId);
 
     this.players[player.id] = player;

@@ -61,6 +61,8 @@ class Server {
         });
       });
 
+      // list-players !!!
+
       socket.on('new-game', () => {
         const id = `game-${socket.id}`;
 
@@ -76,9 +78,10 @@ class Server {
         const game = new Game(id);
 
         this.games[id] = game;
-        game.createPlayer(socket.id);
 
+        game.createPlayer(socket.id);
         socket.join(id);
+
         socket.emit('new-game', {
           id,
           message: 'Game created successfully',
@@ -224,9 +227,6 @@ class Server {
               message: 'Game session terminated',
               status: 0,
             });
-            this.io.of('/').in(id).sockets.forEach((s) => {
-              s.leave(id);
-            });
             clearInterval(interval);
             return;
           }
@@ -235,7 +235,79 @@ class Server {
         }, 1000);
       });
 
-      socket.on('restart-game', () => {});
+      socket.on('restart-game', (message) => {
+        const { id } = message;
+        const game = this.games[id];
+
+        // Имеешь ли право или вошь ебаная
+        if (`game-${socket.id}` !== id) {
+          socket.emit('restart-game', {
+            id: null,
+            message: 'You are not host',
+            status: 400,
+          });
+          return;
+        }
+
+        // Есть ли игра
+        if (!game) {
+          socket.emit('restart-game', {
+            id: null,
+            message: 'You are not host',
+            status: 400,
+          });
+          return;
+        }
+
+        // Закончилась ли игра
+        if (game.isActive) {
+          socket.emit('restart-game', {
+            id: null,
+            message: 'Game is still active',
+            status: 400,
+          });
+          return;
+        }
+
+        // Создать игру
+        const newGame = new Game(id);
+
+        // Мигрировать игроков
+        Object.values(game.players).forEach((player) => {
+          newGame.createPlayer(player.id);
+        });
+
+        // Удалить старую игру
+        delete this.games[id];
+
+        // Мигрировать игру
+        this.games[id] = newGame;
+
+        // Запустить сессию
+        newGame.startGame();
+
+        this.io.in(id).emit('restart-game', {
+          id,
+          message: 'Game session restarted successfully',
+          status: 200,
+        });
+
+        const interval = setInterval(() => {
+          const data = game.updateState();
+
+          if (!data) {
+            this.io.in(id).emit('new-state', {
+              id,
+              message: 'Game session terminated',
+              status: 0,
+            });
+            clearInterval(interval);
+            return;
+          }
+
+          this.io.in(id).emit('new-state', data);
+        }, 1000);
+      });
 
       socket.on('player-action', (message) => {
         const { id, action } = message;
