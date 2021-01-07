@@ -126,8 +126,10 @@ class Player {
     const { x, y } = coords;
     X += x;
     Y += y;
-    if (X >= 0 && X < this.tempField[0].length
-    && Y >= 0 && Y < this.tempField.length) {
+    if (X < this.tempField[0].length
+    && Y < this.tempField.length) {
+      this.piece.oldX = this.piece.x;
+      this.piece.oldY = this.piece.y;
       this.piece.x = X;
       this.piece.y = Y;
       return this;
@@ -140,10 +142,13 @@ class Player {
     const Y = this.piece.y;
     for (let y = 0; y < this.piece.currentFigure().length; y += 1) {
       for (let x = 0; x < this.piece.currentFigure()[y].length; x += 1) {
-        if ((X + x) >= 0 && (X + x) < this.tempField[0].length
-            && (Y + y) >= 0 && (Y + y) < this.tempField.length) {
+        const checkX = (X + x) >= 0 && (X + x) < this.tempField[0].length;
+        const checkY = (Y + y) >= 0 && (Y + y) < this.tempField.length;
+        if (checkX && checkY) {
           this.tempField[Y + y][X + x] += this.piece.currentFigure()[y][x];
           if (this.tempField[Y + y][X + x] !== 0 && this.tempField[Y + y][X + x] % 2 === 0) {
+            this.piece.x = this.piece.oldX;
+            this.piece.y = this.piece.oldY;
             this.tempField = this.field;
             return undefined;
           }
@@ -152,6 +157,8 @@ class Player {
             // eslint-disable-next-line no-continue
             continue;
           }
+          this.piece.x = this.piece.oldX;
+          this.piece.y = this.piece.oldY;
           this.tempField = this.field;
           return undefined;
         }
@@ -218,6 +225,15 @@ class Player {
       this.isAlive = false;
     }
     return this.clearFullLine();
+  }
+
+  getState() {
+    return {
+      id: this.id,
+      field: this.field,
+      isAlive: this.isAlive,
+      nextPiece: this.piece.nextShape.display,
+    };
   }
 }
 

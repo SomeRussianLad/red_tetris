@@ -7,6 +7,8 @@ class Piece {
     this.currentView = 0;
     this.x = 3;
     this.y = 0;
+    this.oldX = 0;
+    this.oldY = 0;
   }
 
   rotateFigure() {
