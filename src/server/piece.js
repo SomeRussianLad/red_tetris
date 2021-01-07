@@ -21,10 +21,6 @@ class Piece {
     return this.shape[this.currentView];
   }
 
-  nextPiece() {
-    return this.nextShape.display;
-  }
-
   updateState() {
     this.nextShape = !this.nextShape ? new PieceGenerator().generatePiece() : this.nextShape;
     this.shape = this.nextShape;

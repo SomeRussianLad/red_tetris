@@ -167,7 +167,10 @@ class Player {
     return this;
   }
 
-  action(action = 'left') {
+  action(action) {
+    if (!this.piece.shape) {
+      this.piece.updateState();
+    }
     this.tempField = this.field.map((row) => row.slice());
     let result;
 
