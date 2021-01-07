@@ -10,8 +10,8 @@ export const setNewGame = () => (dispatch) => {
   socket.on('new-game', (res) => {
     if (res.status !== 200) handleErrors(res);
     dispatch(setGame(res.id));
-    const id = res.id.split('-');
-    const player = `player-${id[1]}`;
+    const id = res.id.slice(5);
+    const player = `player-${id}`;
     dispatch(setPlayer(player));
     socket.off('new-game');
   });
@@ -28,7 +28,7 @@ export const setListGame = () => (dispatch) => {
 // eslint-disable-next-line no-unused-vars
 export const joinGame = (id) => (dispatch) => {
   socket.on('join-game', (res) => {
-    // console.log(res);
+    console.log('join', res);
     if (res.status === 200) { dispatch(setPlayer(res.playerId)); }
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // message: "Joined game session successfully"
@@ -50,7 +50,7 @@ export const getMap = () => (dispatch) => {
 // eslint-disable-next-line no-unused-vars
 export const startGame = () => (dispatch) => {
   socket.on('start-game', (res) => {
-    console.log(res);
+    console.log('start', res);
   });
   socket.emit('start-game');
 };

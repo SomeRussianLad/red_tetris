@@ -1,11 +1,10 @@
 import React from 'react';
 import { Route, Switch } from 'react-router-dom';
-import Game from '../component/game/game';
+import Game from './game/game';
 import styles from './App.module.scss';
-
-import Start from '../component/start/start';
-import JoinGame from '../component/joinGame/joinGame';
-import NewGame from '../component/newGame/newGame';
+import Start from './start/start';
+import JoinGame from './joinGame/joinGame';
+import NewGame from './newGame/newGame';
 
 const paths = {
   game: '/game/:id',
