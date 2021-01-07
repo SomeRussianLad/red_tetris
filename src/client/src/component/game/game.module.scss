@@ -48,3 +48,17 @@ flex-direction: row;
   height: 20px;
   background-color: black;
 }
+
+.map{
+  width: 520px;
+  display: flex;
+  flex-direction: row;
+}
+
+.otherMap{
+  margin: 10px;
+  display: flex;
+  flex-direction: row;
+  height: 50%;
+}
+

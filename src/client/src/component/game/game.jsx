@@ -18,11 +18,10 @@ const Game = ({
   // eslint-disable-next-line react/prop-types
   dispatchJoinGame, dispatchGetMap, dispatchStartGame, game, map,
   // eslint-disable-next-line no-unused-vars,react/prop-types
-  dispatchAction,
+  dispatchAction, otherMap,
 }) => {
   /* eslint-disable */
   const [startGame,setStartGame] = useState(false);
-  const [action, setAction] = useState('');
   const { id } = useParams();
 
   useEffect(() => {
@@ -33,7 +32,6 @@ const Game = ({
   useEffect(() => {
     if(startGame)
       dispatchGetMap();
-    console.log(map);
   },[map, startGame]);
 
   useEffect(() =>{
@@ -58,9 +56,9 @@ const Game = ({
 
   return (
     <div className={styles.container}>
-      {id === game && (<button onClick={start}>START</button>)}
+      {id === game && !startGame && (<button onClick={start}>START</button>)}
       {map && map.isAlive &&
-        <div>
+        <div className={styles.map}>
         <div className={styles.containerMap}>
         { map.field && map.field.length && map.field.map((str) => (
           <div className={styles.containerStr}>
@@ -75,6 +73,16 @@ const Game = ({
           </div>
         ))}
       </div>
+          <div>
+            {console.log('otherMap',otherMap)}
+            {otherMap && otherMap.map((itemMap) => (<div className={styles.containerMap}>
+                { itemMap && itemMap.field && itemMap.field.length && itemMap.field.map((str) => (
+                  <div className={styles.containerStr}>
+                    {str.map((color) => <Pixel color={color} />)}
+                  </div>
+                ))}
+              </div>))}
+          </div>
     </div>}
     </div>
   );
@@ -90,7 +98,7 @@ const Game = ({
 const mapStateToProps = (state) => ({
   game: state.game.game,
   map: state.game.myMap,
-  otherMap: state.game.myMap,
+  otherMap: state.game.otherMap,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(React.memo

@@ -28,7 +28,7 @@ export const setListGame = () => (dispatch) => {
 // eslint-disable-next-line no-unused-vars
 export const joinGame = (id) => (dispatch) => {
   socket.on('join-game', (res) => {
-    // console.log(res);
+    console.log('join', res);
     if (res.status === 200) { dispatch(setPlayer(res.playerId)); }
     // id: "game-2y3PSr0iqVtmVp4nAAAB"
     // message: "Joined game session successfully"
