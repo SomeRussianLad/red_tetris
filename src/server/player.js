@@ -41,7 +41,7 @@ class Player {
   }
 
   fixedFigure() {
-    let count = 4;
+    let count = 0;
     for (let y = this.tempField.length - 1; y >= 0; y -= 1) {
       for (let x = this.tempField[y].length; x >= 0; x -= 1) {
         if (this.tempField[y][x] === 1) {
@@ -99,8 +99,6 @@ class Player {
           if (this.field[Y + y][X + x] !== 0 && this.field[Y + y][X + x] % 2 === 0) {
             return undefined;
           }
-        } else {
-          return undefined;
         }
       }
     }
