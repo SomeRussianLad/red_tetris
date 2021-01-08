@@ -5,12 +5,11 @@ const express = require('express');
 const io = require('socket.io');
 const Game = require('./game');
 
-const DEFAULT_TIMEOUT = 10;
-
 class Server {
   constructor() {
     this.host = process.env.HOST || '0.0.0.0';
     this.port = process.env.PORT || 5000;
+    this.defaultTimeout = 1000;
 
     this.app = express();
     this.http = http.createServer(this.app);
@@ -255,7 +254,7 @@ class Server {
           }
 
           this.io.in(id).emit('new-state', data);
-        }, DEFAULT_TIMEOUT);
+        }, this.defaultTimeout);
       });
 
       socket.on('restart-game', (message) => {
@@ -320,7 +319,7 @@ class Server {
           }
 
           this.io.in(id).emit('new-state', data);
-        }, DEFAULT_TIMEOUT);
+        }, this.defaultTimeout);
       });
 
       socket.on('player-action', (message) => {
